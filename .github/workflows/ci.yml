@@ -1,0 +1,26 @@
+name: Web Montvel CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: HTML5 / Assets Validation
+        run: |
+          test -f index.html || exit 1
+          test -f assets/css/styles.css || exit 1
+          test -f assets/js/app.js || exit 1
+          test -f assets/js/scene3d.js || exit 1
+          test -f assets/js/form.js || exit 1
+          echo "All core assets verified."

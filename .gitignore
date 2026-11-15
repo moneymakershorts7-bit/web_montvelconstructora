@@ -1,0 +1,8 @@
+# .gitignore for web_montvelconstructora
+.DS_Store
+Thumbs.db
+*.log
+node_modules/
+.env
+.env.local
+*.tmp

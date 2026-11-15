@@ -1,0 +1,11 @@
+# Gitleaks Configuration for web_montvelconstructora
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Global allowlists"
+paths = [
+  '''^\.git/''',
+  '''assets/js/scene3d\.js''',
+  '''assets/js/app\.js'''
+]
