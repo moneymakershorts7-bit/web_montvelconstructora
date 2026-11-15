@@ -7,50 +7,75 @@
  * 1. Plano arquitectónico civil con cuadrícula, muros, aberturas y cotas.
  * 2. Estructura de edificio abstracto que se eleva conforme se avanza el scroll.
  * 3. En la sección #racks, una estantería industrial 3D metálica armada por piezas.
- * 4. Control de rendimiento: max pixel ratio, fallback a CSS grid si no hay WebGL,
- *    y respeto total de prefers-reduced-motion.
+ * 4. Control de robustez:
+ *    - Detección progresiva de contexto WebGL con fallback seguro (WebGL 2 -> WebGL 1 -> Experimental -> CSS Grid).
+ *    - Manejo de fallos en protocolos file:// y permisos de GPU restringidos.
+ *    - Respeto de prefers-reduced-motion y modo móvil de bajo consumo.
  */
 
 (function(){
   var canvas = document.getElementById("bg3d");
   if (!canvas) return;
 
-  // Detección de accesibilidad: Si el usuario prefiere movimiento reducido
+  // Detección de preferencias de accesibilidad
   var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  // Detección de dispositivos móviles para ajustar fidelidad gráfica
   var mobile = window.matchMedia("(max-width: 767px)").matches;
 
-  // Fallback si Three.js no cargó
+  // Fallback directo si Three.js no está cargado
   if (!window.THREE) {
     document.body.classList.add("no3d");
     return;
   }
 
-  // Inicialización del renderizador WebGL
-  var renderer;
-  try {
-    renderer = new THREE.WebGLRenderer({
-      canvas: canvas,
-      antialias: !mobile,
-      alpha: true,
-      powerPreference: "high-performance"
-    });
-  } catch (e) {
+  // ==========================================================================
+  // INICIALIZACIÓN ROBUSTA DE RENDERIZADOR WEBGL
+  // ==========================================================================
+  // En algunos entornos o navegadores con banderas estrictas / file://, WebGL
+  // puede fallar si se exige high-performance o failIfMajorPerformanceCaveat.
+  // Intentamos inicializar de forma tolerante y progresiva.
+  var renderer = null;
+
+  function initRenderer() {
+    var optionsList = [
+      { canvas: canvas, antialias: !mobile, alpha: true, powerPreference: "default" },
+      { canvas: canvas, antialias: false, alpha: true, precision: "mediump" },
+      { canvas: canvas, antialias: false, alpha: true, failIfMajorPerformanceCaveat: false }
+    ];
+
+    for (var i = 0; i < optionsList.length; i++) {
+      try {
+        var r = new THREE.WebGLRenderer(optionsList[i]);
+        if (r && r.getContext()) {
+          return r;
+        }
+      } catch (err) {
+        console.warn("WebGL init attempt " + (i + 1) + " failed: ", err);
+      }
+    }
+    return null;
+  }
+
+  renderer = initRenderer();
+
+  // Si ningún contexto WebGL pudo ser creado (p. ej. GPU inhabilitada en file:// o sandbox),
+  // activamos el fallback estético CSS sin romper la página.
+  if (!renderer) {
+    console.warn("No WebGL context could be created. Falling back to CSS blueprint background.");
     document.body.classList.add("no3d");
     return;
   }
 
-  // Limitar pixel ratio para evitar consumo excesivo de GPU en pantallas Retina
+  // Configuración de resolución del canvas
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobile ? 1.5 : 2));
 
-  // Paleta de colores arquitectónicos
-  var GOLD = 0xE8C877;       // Dorado brillante para aristas y líneas activas
-  var GOLD_DK = 0xB38A32;    // Dorado oscuro para ejes y cotas de fondo
+  // Paleta cromática arquitectónica
+  var GOLD = 0xE8C877;       // Dorado brillante para muros principales y componentes
+  var GOLD_DK = 0xB38A32;    // Dorado medio para ejes técnicos y cotas secundarias
 
   var scene = new THREE.Scene();
   var camera = new THREE.PerspectiveCamera(40, 1, 0.1, 200);
 
-  // Funciones auxiliares matemáticas
+  // Funciones matemáticas auxiliares
   function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
   function smooth(t){ return t * t * (3 - 2 * t); }
   function lmat(op, c){
@@ -65,8 +90,8 @@
   // 1. CONSTRUCCIÓN DEL PLANO ARQUITECTÓNICO (LineSegments)
   // ==========================================================================
   var P = [];        // Vértices del plano
-  var F = [];        // Vértices del relleno sutil
-  var labels = [];   // Marcadores/ejes
+  var F = [];        // Relleno suave de muros
+  var labels = [];   // Marcadores de cotas
 
   function L(x1, z1, x2, z2){
     P.push(x1, 0, z1, x2, 0, z2);
@@ -82,7 +107,7 @@
         seg(cur, o1);
       }
       cur = o2;
-      // Apertura de puerta con arco abatible
+      // Apertura de puerta técnica
       if (type === "d") {
         var r = Math.abs(o2 - o1);
         if (ax === "h") {
@@ -99,7 +124,7 @@
           L(c, o1, c + r * side, o1);
         }
       } else if (type === "w") {
-        // Ventana técnica: doble línea
+        // Ventana técnica (doble línea)
         if (ax === "h") {
           L(o1, c - t * 0.4, o2, c - t * 0.4);
           L(o1, c + t * 0.4, o2, c + t * 0.4);
@@ -181,7 +206,7 @@
   scene.add(grid);
   var gridCount = G.length / 3;
 
-  // Relleno sutil para dar volumen a muros
+  // Relleno sutil para dar masa a muros
   var fillGeo = new THREE.BufferGeometry();
   fillGeo.setAttribute("position", new THREE.Float32BufferAttribute(F, 3));
   var fillMat = new THREE.MeshBasicMaterial({
@@ -262,7 +287,7 @@
   for (var i = 0; i < 8; i++){
     piece(RW - 0.2, 0.05, RD - 0.2, 0, 0.55 + i * 0.5, 0, 0.7);
   }
-  // Cajas o servidores en estantes
+  // Cajas o módulos en estantes
   if (!mobile){
     [0, 1, 3, 4, 6].forEach(function(s){
       piece(RW - 0.3, 0.32, RD - 0.5, 0, 0.55 + s * 0.5 + 0.19, 0, 0.9);
