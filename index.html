@@ -9,6 +9,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Fallback local para tipografía si Google Fonts no está disponible -->
+    <noscript><link rel="stylesheet" href="assets/vendor/fonts/fonts.css"></noscript>
     <link rel="stylesheet" href="assets/css/styles.css">
 </head>
 <body>
@@ -234,9 +236,15 @@
   <span>WhatsApp</span>
 </a>
 
-    <!-- Scripts -->
+    <!-- Scripts con Fallback Local para CDN -->
     <script src="assets/js/app.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+      // Fallback local: Si Three.js no cargó desde CDNJS, cargar la copia local
+      if (typeof THREE === 'undefined') {
+        document.write('<script src="assets/vendor/three/three.min.js"><\/script>');
+      }
+    </script>
     <script src="assets/js/scene3d.js"></script>
     <script src="assets/js/form.js"></script>
 </body>

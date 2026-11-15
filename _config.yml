@@ -1,0 +1,12 @@
+# Jekyll configuration for web_montvelconstructora
+title: "Montvel Constructora"
+description: "Obra nueva, remodelaciones y fabricación de racks industriales."
+baseurl: "/web_montvelconstructora"
+url: "https://moneymakershorts7-bit.github.io"
+
+# Exclude unneeded files from Jekyll build
+exclude:
+  - ".gitleaks.toml"
+  - "AGENTS.md"
+  - "api/"
+  - "enviar.php"
