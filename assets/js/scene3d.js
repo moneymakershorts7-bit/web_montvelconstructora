@@ -1,384 +1,610 @@
 /**
  * ============================================================================
- * ESCENA 3D Y ANIMACIÓN REACTIVA AL SCROLL (scene3d.js)
- * Proyecto: web_montvelconstructora
+ * scene3d.js — Animación WebGL 3D para Montvel Constructora
  * ============================================================================
- * Genera en un canvas WebGL fijo (#bg3d):
- * 1. Plano arquitectónico civil con cuadrícula, muros, aberturas y cotas.
- * 2. Estructura de edificio abstracto que se eleva conforme se avanza el scroll.
- * 3. En la sección #racks, una estantería industrial 3D metálica armada por piezas.
- * 4. Control de robustez:
- *    - Detección progresiva de contexto WebGL con fallback seguro (WebGL 2 -> WebGL 1 -> Experimental -> CSS Grid).
- *    - Manejo de fallos en protocolos file:// y permisos de GPU restringidos.
- *    - Respeto de prefers-reduced-motion y modo móvil de bajo consumo.
+ *
+ * DESCRIPCIÓN GENERAL:
+ * Este archivo controla la escena Three.js que se anima al hacer scroll.
+ * Contiene dos objetos 3D principales que se revelan progresivamente:
+ *
+ *   1. PLANO ARQUITECTÓNICO (sección hero / inicio)
+ *      Un plano técnico en vista cenital con muros, puertas, ventanas,
+ *      ejes de referencia y cuadrícula. Se dibuja progresivamente al cargar.
+ *      Inspirado en la documentación técnica real de obras ecuatorianas.
+ *
+ *   2. RACK INDUSTRIAL 3D (sección #racks)
+ *      Estantería metálica de rack selectivo a escala real:
+ *      - 3 bahías de rack, cada una: 1.8m ancho × 2.0m prof × 4.4m alto
+ *      - 5 niveles de estantes por bahía (separación ~0.75m)
+ *      - Columnas verticales, travesaños y base
+ *      Los componentes se ensamblan animadamente al entrar la sección
+ *      al viewport (controlado por scroll).
+ *
+ * ============================================================================
+ * CÓMO MODIFICAR LA ESCENA (para desarrolladores humanos e IA):
+ * ============================================================================
+ *
+ *  CAMBIAR COLORES:
+ *    Modifica las constantes GOLD y GOLD_DK al inicio del IIFE.
+ *    Formato: 0xRRGGBB (hexadecimal).
+ *
+ *  CAMBIAR EL PLANO ARQUITECTÓNICO:
+ *    La función wall(eje, coordFija, inicio, fin, grosor, [aperturas]) dibuja
+ *    un muro con doble línea (simulando grosor). Parámetros:
+ *      - eje:       "h" (horizontal/X) o "v" (vertical/Z)
+ *      - coordFija: coordenada fija en el eje perpendicular
+ *      - inicio/fin: rango del muro en el eje principal
+ *      - grosor:    mitad del espesor del muro (valor visual)
+ *      - aperturas: array de [posInicio, posFin, tipo, lado]
+ *                   tipo "d" = puerta (arco), tipo "w" = ventana (doble línea)
+ *
+ *  CAMBIAR EL RACK:
+ *    Modifica las constantes RW (ancho), RD (profundidad), RH (alto), BAYS
+ *    (número de bahías), SHELVES (número de estantes por bahía).
+ *    La función piece(w, h, d, x, y, z, opacity) añade un componente al rack.
+ *
+ *  CAMBIAR VELOCIDAD DE ANIMACIÓN:
+ *    - Intro (plano aparece): constante INTRO_DURATION_MS
+ *    - Suavidad de scroll/lerp: el factor 0.07 en loop()
+ *    - Ensamblado del rack: controlado por tgt.rack (0–1 según scroll)
+ *
+ *  CAMBIAR CÁMARA:
+ *    - t1: punto lookAt para la vista del plano (edificio)
+ *    - t2: punto lookAt para la vista del rack
+ *    La cámara interpola linealmente entre v1 (posición plano) y v2 (rack).
+ *
+ * ============================================================================
+ * REQUISITOS TÉCNICOS:
+ *   - Three.js r128 debe estar cargado ANTES que este script.
+ *   - El canvas debe tener id="bg3d" en el HTML.
+ *   - La sección de racks debe tener id="racks".
+ *   - Servir desde HTTP (localhost o GitHub Pages), NO desde file://.
+ *     WebGL falla en file:// por restricciones de seguridad del navegador.
+ *
+ * ============================================================================
+ * DATOS REALES DE REFERENCIA (Ecuador):
+ *   Edificio más alto:  Torre Maxximus, Guayaquil — 184m / 50+ pisos
+ *   Icono arquitectónico: Torre The Point, Guayaquil — 136.5m (diseño espiral)
+ *   Icono contemporáneo: IQON, Quito — 131m (BIG Architects, bosque vertical)
+ *   Rack selectivo estándar: 1.8m ancho × 2.0m prof × 4.4m alto, aisle 3–3.5m
+ *   Normativa estructural: NEC-SE-DS (sísmica), ACI 318 (hormigón armado)
+ *
+ * ============================================================================
  */
 
-(function(){
-  var canvas = document.getElementById("bg3d");
-  if (!canvas) return;
+(function () {
 
-  // Detección de preferencias de accesibilidad
-  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var mobile = window.matchMedia("(max-width: 767px)").matches;
+  // --------------------------------------------------------------------------
+  // CONSTANTES DE CONFIGURACIÓN — modifica aquí para cambiar apariencia global
+  // --------------------------------------------------------------------------
+  var GOLD    = 0xE8C877; // Dorado brillante: muros, elementos principales
+  var GOLD_DK = 0xB38A32; // Dorado oscuro: cuadrícula, detalles secundarios
+  var INTRO_DURATION_MS = 2600; // ms que tarda el plano en dibujarse al cargar
 
-  // Fallback directo si Three.js no está cargado
-  if (!window.THREE) {
-    document.body.classList.add("no3d");
+  // --------------------------------------------------------------------------
+  // DETECCIÓN DE ENTORNO Y CAPACIDADES
+  // --------------------------------------------------------------------------
+  var canvas = document.getElementById('bg3d');
+  if (!canvas) return; // Sin canvas, nada que hacer
+
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var isMobile     = window.matchMedia('(max-width: 767px)').matches;
+
+  // Three.js debe estar ya cargado (index.html garantiza el orden correcto)
+  if (typeof window.THREE === 'undefined') {
+    console.warn('[scene3d] Three.js no está disponible. Activando fallback CSS.');
+    document.body.classList.add('no3d');
     return;
   }
 
-  // ==========================================================================
-  // INICIALIZACIÓN ROBUSTA DE RENDERIZADOR WEBGL
-  // ==========================================================================
-  // En algunos entornos o navegadores con banderas estrictas / file://, WebGL
-  // puede fallar si se exige high-performance o failIfMajorPerformanceCaveat.
-  // Intentamos inicializar de forma tolerante y progresiva.
+  // --------------------------------------------------------------------------
+  // INICIALIZACIÓN PROGRESIVA DEL RENDERER WEBGL
+  // Intentamos 3 configuraciones distintas, de más exigente a más tolerante.
+  // Si ninguna funciona (GPU deshabilitada, sandbox estricto), activamos
+  // el fallback CSS (clase "no3d") sin romper la página.
+  // --------------------------------------------------------------------------
   var renderer = null;
 
-  function initRenderer() {
-    var optionsList = [
-      { canvas: canvas, antialias: !mobile, alpha: true, powerPreference: "default" },
-      { canvas: canvas, antialias: false, alpha: true, precision: "mediump" },
-      { canvas: canvas, antialias: false, alpha: true, failIfMajorPerformanceCaveat: false }
-    ];
+  var rendererConfigs = [
+    // Intento 1: configuración óptima con antialiasing
+    { canvas: canvas, antialias: !isMobile, alpha: true, powerPreference: 'default' },
+    // Intento 2: sin antialiasing, precisión media
+    { canvas: canvas, antialias: false, alpha: true, precision: 'mediump' },
+    // Intento 3: mínimo absoluto, acepta cualquier GPU
+    { canvas: canvas, antialias: false, alpha: true, failIfMajorPerformanceCaveat: false }
+  ];
 
-    for (var i = 0; i < optionsList.length; i++) {
-      try {
-        var r = new THREE.WebGLRenderer(optionsList[i]);
-        if (r && r.getContext()) {
-          return r;
-        }
-      } catch (err) {
-        console.warn("WebGL init attempt " + (i + 1) + " failed: ", err);
+  for (var ri = 0; ri < rendererConfigs.length; ri++) {
+    try {
+      var r = new THREE.WebGLRenderer(rendererConfigs[ri]);
+      if (r && r.getContext()) {
+        renderer = r;
+        break; // Éxito: salir del bucle
       }
+    } catch (e) {
+      console.warn('[scene3d] WebGL intento ' + (ri + 1) + ' fallido:', e.message || e);
     }
-    return null;
   }
 
-  renderer = initRenderer();
-
-  // Si ningún contexto WebGL pudo ser creado (p. ej. GPU inhabilitada en file:// o sandbox),
-  // activamos el fallback estético CSS sin romper la página.
   if (!renderer) {
-    console.warn("No WebGL context could be created. Falling back to CSS blueprint background.");
-    document.body.classList.add("no3d");
+    // Ningún contexto WebGL pudo crearse. Activar fallback CSS.
+    // La clase "no3d" en body activa el fondo blueprint definido en styles.css.
+    console.warn('[scene3d] WebGL no disponible. Usando fallback CSS blueprint.');
+    document.body.classList.add('no3d');
     return;
   }
 
-  // Configuración de resolución del canvas
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobile ? 1.5 : 2));
+  // Resolución del canvas: cap en 2x para desktop, 1.5x para móvil
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2));
 
-  // Paleta cromática arquitectónica
-  var GOLD = 0xE8C877;       // Dorado brillante para muros principales y componentes
-  var GOLD_DK = 0xB38A32;    // Dorado medio para ejes técnicos y cotas secundarias
+  // --------------------------------------------------------------------------
+  // ESCENA Y CÁMARA
+  // --------------------------------------------------------------------------
+  var scene  = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(
+    40,  // FOV en grados
+    1,   // Aspect ratio (se actualiza en resize())
+    0.1, // Near plane
+    200  // Far plane
+  );
 
-  var scene = new THREE.Scene();
-  var camera = new THREE.PerspectiveCamera(40, 1, 0.1, 200);
+  // --------------------------------------------------------------------------
+  // UTILIDADES MATEMÁTICAS
+  // --------------------------------------------------------------------------
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function smooth(t) { return t * t * (3 - 2 * t); } // Cubic ease in-out
+  function lerp(a, b, t) { return a + (b - a) * t; }
 
-  // Funciones matemáticas auxiliares
-  function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
-  function smooth(t){ return t * t * (3 - 2 * t); }
-  function lmat(op, c){
+  /** Crea un material de línea básico con color y opacidad dados */
+  function lineMat(opacity, color) {
     return new THREE.LineBasicMaterial({
-      color: c || GOLD,
+      color: color !== undefined ? color : GOLD,
       transparent: true,
-      opacity: op
+      opacity: opacity
     });
   }
 
-  // ==========================================================================
-  // 1. CONSTRUCCIÓN DEL PLANO ARQUITECTÓNICO (LineSegments)
-  // ==========================================================================
-  var P = [];        // Vértices del plano
-  var F = [];        // Relleno suave de muros
-  var labels = [];   // Marcadores de cotas
+  // --------------------------------------------------------------------------
+  // SECCIÓN 1: PLANO ARQUITECTÓNICO TÉCNICO
+  // --------------------------------------------------------------------------
+  // Acumula los vértices del plano lineal (P) y el relleno de muros (F)
+  var planVerts  = [];
+  var fillVerts  = [];
 
-  function L(x1, z1, x2, z2){
-    P.push(x1, 0, z1, x2, 0, z2);
+  /**
+   * Añade un segmento de línea al plano.
+   * Coordenadas en el plano XZ (Y=0 = suelo).
+   */
+  function L(x1, z1, x2, z2) {
+    planVerts.push(x1, 0, z1, x2, 0, z2);
   }
 
-  // Generador de muros con aberturas (ventanas y puertas)
-  function wall(ax, c, s, e, t, ops){
-    ops = (ops || []).slice().sort(function(a, b){ return a[0] - b[0]; });
-    var cur = s;
-    ops.forEach(function(o){
+  /**
+   * Dibuja un muro con doble línea (simulando grosor estructural).
+   * Incluye soporte para aperturas de puertas (arco) y ventanas (doble línea).
+   *
+   * @param {string} axis    "h" = muro horizontal (corre en X), "v" = vertical (corre en Z)
+   * @param {number} coord   Coordenada fija del eje perpendicular
+   * @param {number} start   Inicio del muro en el eje principal
+   * @param {number} end     Fin del muro en el eje principal
+   * @param {number} thick   Mitad del grosor visual del muro
+   * @param {Array}  opens   Aperturas: [[posInicio, posFin, "d"|"w", lado?], ...]
+   */
+  function wall(axis, coord, start, end, thick, opens) {
+    opens = (opens || []).slice().sort(function (a, b) { return a[0] - b[0]; });
+    var cur = start;
+
+    opens.forEach(function (o) {
       var o1 = o[0], o2 = o[1], type = o[2], side = o[3] || 1;
-      if (o1 > cur) {
-        seg(cur, o1);
-      }
+      if (o1 > cur) segment(cur, o1); // Muro sólido antes de la apertura
       cur = o2;
-      // Apertura de puerta técnica
-      if (type === "d") {
-        var r = Math.abs(o2 - o1);
-        if (ax === "h") {
-          for (var i = 0; i < 8; i++) {
-            var a1 = (i / 8) * (Math.PI / 2), a2 = ((i + 1) / 8) * (Math.PI / 2);
-            L(o1 + Math.cos(a1) * r, c + Math.sin(a1) * r * side, o1 + Math.cos(a2) * r, c + Math.sin(a2) * r * side);
+
+      if (type === 'd') {
+        // PUERTA: arco de cuarto de círculo que indica el barrido
+        var radius = Math.abs(o2 - o1);
+        var steps  = 8;
+        for (var i = 0; i < steps; i++) {
+          var a1 = (i / steps) * (Math.PI / 2);
+          var a2 = ((i + 1) / steps) * (Math.PI / 2);
+          if (axis === 'h') {
+            L(o1 + Math.cos(a1) * radius, coord + Math.sin(a1) * radius * side,
+              o1 + Math.cos(a2) * radius, coord + Math.sin(a2) * radius * side);
+          } else {
+            L(coord + Math.sin(a1) * radius * side, o1 + Math.cos(a1) * radius,
+              coord + Math.sin(a2) * radius * side, o1 + Math.cos(a2) * radius);
           }
-          L(o1, c, o1, c + r * side);
-        } else {
-          for (var i = 0; i < 8; i++) {
-            var a1 = (i / 8) * (Math.PI / 2), a2 = ((i + 1) / 8) * (Math.PI / 2);
-            L(c + Math.sin(a1) * r * side, o1 + Math.cos(a1) * r, c + Math.sin(a2) * r * side, o1 + Math.cos(a2) * r);
-          }
-          L(c, o1, c + r * side, o1);
         }
-      } else if (type === "w") {
-        // Ventana técnica (doble línea)
-        if (ax === "h") {
-          L(o1, c - t * 0.4, o2, c - t * 0.4);
-          L(o1, c + t * 0.4, o2, c + t * 0.4);
+        // Línea de hoja de puerta
+        if (axis === 'h') L(o1, coord, o1, coord + radius * side);
+        else               L(coord, o1, coord + radius * side, o1);
+
+      } else if (type === 'w') {
+        // VENTANA: doble línea paralela representando el vano con cristal
+        if (axis === 'h') {
+          L(o1, coord - thick * 0.4, o2, coord - thick * 0.4);
+          L(o1, coord + thick * 0.4, o2, coord + thick * 0.4);
         } else {
-          L(c - t * 0.4, o1, c - t * 0.4, o2);
-          L(c + t * 0.4, o1, c + t * 0.4, o2);
+          L(coord - thick * 0.4, o1, coord - thick * 0.4, o2);
+          L(coord + thick * 0.4, o1, coord + thick * 0.4, o2);
         }
       }
     });
-    if (cur < e) seg(cur, e);
 
-    function seg(a, b){
-      if (ax === "h") {
-        L(a, c - t, b, c - t);
-        L(a, c + t, b, c + t);
-        L(a, c - t, a, c + t);
-        L(b, c - t, b, c + t);
-        F.push(a, 0, c - t, b, 0, c - t, a, 0, c + t, b, 0, c - t, b, 0, c + t, a, 0, c + t);
+    if (cur < end) segment(cur, end); // Muro sólido después de la última apertura
+
+    /** Dibuja un segmento sólido del muro (doble línea + relleno opaco) */
+    function segment(a, b) {
+      if (axis === 'h') {
+        L(a, coord - thick, b, coord - thick);
+        L(a, coord + thick, b, coord + thick);
+        L(a, coord - thick, a, coord + thick);
+        L(b, coord - thick, b, coord + thick);
+        // Triángulos de relleno para dar masa visual al muro
+        fillVerts.push(
+          a, 0, coord - thick,  b, 0, coord - thick,  a, 0, coord + thick,
+          b, 0, coord - thick,  b, 0, coord + thick,  a, 0, coord + thick
+        );
       } else {
-        L(c - t, a, c - t, b);
-        L(c + t, a, c + t, b);
-        L(c - t, a, c + t, a);
-        L(c - t, b, c + t, b);
-        F.push(c - t, a, c + t, a, c - t, b, c + t, a, c + t, b, c - t, b);
+        L(coord - thick, a, coord - thick, b);
+        L(coord + thick, a, coord + thick, b);
+        L(coord - thick, a, coord + thick, a);
+        L(coord - thick, b, coord + thick, b);
+        fillVerts.push(
+          coord - thick, a, coord + thick, a, coord - thick, b,
+          coord + thick, a, coord + thick, b, coord - thick, b
+        );
       }
     }
   }
 
-  function circ(x, z, r){
-    for (var i = 0; i < 16; i++){
-      var s1 = i / 16 * Math.PI * 2, s2 = (i + 1) / 16 * Math.PI * 2;
-      L(x + Math.cos(s1) * r, z + Math.sin(s1) * r, x + Math.cos(s2) * r, z + Math.sin(s2) * r);
+  /**
+   * Dibuja un círculo en XZ (para los remates de ejes de referencia).
+   */
+  function circle(x, z, radius) {
+    var steps = 16;
+    for (var i = 0; i < steps; i++) {
+      var a1 = (i / steps) * Math.PI * 2;
+      var a2 = ((i + 1) / steps) * Math.PI * 2;
+      L(x + Math.cos(a1) * radius, z + Math.sin(a1) * radius,
+        x + Math.cos(a2) * radius, z + Math.sin(a2) * radius);
     }
   }
 
-  function axis(x1, z1, x2, z2, txt){
-    var dash = 0.4, gap = 0.2, len = Math.hypot(x2 - x1, z2 - z1);
-    var dx = (x2 - x1) / len, dz = (z2 - z1) / len, d = 0;
-    while (d < len){
-      var segLen = Math.min(dash, len - d);
-      L(x1 + dx * d, z1 + dz * d, x1 + dx * (d + segLen), z1 + dz * (d + segLen));
-      d += dash + gap;
+  /**
+   * Dibuja un eje de referencia técnico (línea de trazos con círculos en extremos).
+   * En planos arquitectónicos reales, los ejes identifican alineaciones
+   * de columnas y muros estructurales.
+   */
+  function axis(x1, z1, x2, z2) {
+    var dashLen = 0.4, gapLen = 0.2;
+    var totalLen = Math.hypot(x2 - x1, z2 - z1);
+    var dx = (x2 - x1) / totalLen, dz = (z2 - z1) / totalLen;
+    var d = 0;
+    while (d < totalLen) {
+      var seg = Math.min(dashLen, totalLen - d);
+      L(x1 + dx * d,       z1 + dz * d,
+        x1 + dx * (d + seg), z1 + dz * (d + seg));
+      d += dashLen + gapLen;
     }
-    circ(x1 - dx * 0.5, z1 - dz * 0.5, 0.28);
-    circ(x2 + dx * 0.5, z2 + dz * 0.5, 0.28);
+    // Círculos de remate en los extremos del eje
+    circle(x1 - dx * 0.5, z1 - dz * 0.5, 0.28);
+    circle(x2 + dx * 0.5, z2 + dz * 0.5, 0.28);
   }
 
-  // Trazado de muros exteriores e interiores
-  var T = 0.12;
-  wall("h", -4.5, -6, 6, T, [[-3.5, -1.5, "w"], [1.5, 3.5, "w"]]);
-  wall("h",  4.5, -6, 6, T, [[-4.5, -2.5, "w"], [0, 1.4, "d", 1], [3, 5, "w"]]);
-  wall("v", -6, -4.5, 4.5, T, [[-3, -1, "w"], [1, 3, "w"]]);
-  wall("v",  6, -4.5, 4.5, T, [[-3.5, -1.5, "w"], [1.5, 3.5, "w"]]);
-  wall("v", -1, -4.5, 1.5, T * 0.8, [[-2, -0.8, "d", -1]]);
-  wall("h",  1.5, -6, 2,   T * 0.8, [[-4.5, -3.3, "d", 1]]);
-  wall("v",  2,   -1, 4.5, T * 0.8, [[1, 2.2, "d", 1]]);
+  // ------------------------------------------------------------------
+  // DEFINICIÓN DEL PLANO ARQUITECTÓNICO
+  // Planta típica: espacio principal con zonas delimitadas.
+  // T = grosor de muro (valor real ≈ 0.15m para muros interiores).
+  // ------------------------------------------------------------------
+  var T = 0.12; // Mitad del grosor visual (muro exterior ~0.24 unidades)
 
-  axis(-6, -5.5,  6, -5.5, "A");
-  axis(-6,  5.5,  6,  5.5, "B");
-  axis(-7, -4.5, -7,  4.5, "1");
-  axis( 7, -4.5,  7,  4.5, "2");
+  // Muros exteriores (perímetro del edificio)
+  wall('h', -4.5, -6,  6, T,  [[-3.5, -1.5, 'w'], [1.5, 3.5, 'w']]);
+  wall('h',  4.5, -6,  6, T,  [[-4.5, -2.5, 'w'], [0, 1.4, 'd', 1], [3, 5, 'w']]);
+  wall('v', -6,  -4.5, 4.5, T, [[-3, -1, 'w'], [1, 3, 'w']]);
+  wall('v',  6,  -4.5, 4.5, T, [[-3.5, -1.5, 'w'], [1.5, 3.5, 'w']]);
 
-  // Geometría del plano arquitectónico
+  // Muros interiores (divisiones de ambientes)
+  wall('v', -1, -4.5, 1.5, T * 0.8, [[-2, -0.8, 'd', -1]]); // Pasillo central
+  wall('h',  1.5, -6, 2,   T * 0.8, [[-4.5, -3.3, 'd', 1]]); // Separación lateral
+  wall('v',  2,  -1, 4.5,  T * 0.8, [[1, 2.2, 'd', 1]]);      // Zona posterior
+
+  // Ejes de referencia estructural (nomenclatura A-B, 1-2)
+  // En planos reales estos ejes marcan las líneas de columnas
+  axis(-6, -5.5,  6, -5.5); // Eje A
+  axis(-6,  5.5,  6,  5.5); // Eje B
+  axis(-7, -4.5, -7,  4.5); // Eje 1
+  axis( 7, -4.5,  7,  4.5); // Eje 2
+
+  // Construir la geometría Three.js del plano lineal
   var planGeo = new THREE.BufferGeometry();
-  planGeo.setAttribute("position", new THREE.Float32BufferAttribute(P, 3));
-  var planMat = lmat(0.9, GOLD);
-  var plan = new THREE.LineSegments(planGeo, planMat);
-  scene.add(plan);
-  var planCount = P.length / 3;
+  planGeo.setAttribute('position', new THREE.Float32BufferAttribute(planVerts, 3));
+  var planMesh = new THREE.LineSegments(planGeo, lineMat(0.9, GOLD));
+  scene.add(planMesh);
+  var totalPlanVerts = planVerts.length / 3; // Para el drawRange progresivo
 
-  // Cuadrícula sutil del suelo
-  var G = [], gs = 1.2;
-  for (var gx = -9; gx <= 9; gx += gs) { G.push(gx, -0.01, -7, gx, -0.01, 7); }
-  for (var gz = -7; gz <= 7; gz += gs) { G.push(-9, -0.01, gz, 9, -0.01, gz); }
-  var gridGeo = new THREE.BufferGeometry();
-  gridGeo.setAttribute("position", new THREE.Float32BufferAttribute(G, 3));
-  var gridMat = lmat(0.18, GOLD_DK);
-  var grid = new THREE.LineSegments(gridGeo, gridMat);
-  scene.add(grid);
-  var gridCount = G.length / 3;
+  // Cuadrícula de referencia del suelo (apagada, sutil)
+  var gridVerts = [], gs = 1.2;
+  for (var gx = -9; gx <= 9; gx += gs) { gridVerts.push(gx, -0.01, -7, gx, -0.01, 7); }
+  for (var gz = -7; gz <= 7; gz += gs) { gridVerts.push(-9, -0.01, gz, 9, -0.01, gz); }
+  var gridGeo  = new THREE.BufferGeometry();
+  gridGeo.setAttribute('position', new THREE.Float32BufferAttribute(gridVerts, 3));
+  var gridMesh = new THREE.LineSegments(gridGeo, lineMat(0.18, GOLD_DK));
+  scene.add(gridMesh);
+  var totalGridVerts = gridVerts.length / 3;
 
-  // Relleno sutil para dar masa a muros
-  var fillGeo = new THREE.BufferGeometry();
-  fillGeo.setAttribute("position", new THREE.Float32BufferAttribute(F, 3));
-  var fillMat = new THREE.MeshBasicMaterial({
+  // Relleno de muros (malla semi-opaca para dar masa visual)
+  var fillGeo  = new THREE.BufferGeometry();
+  fillGeo.setAttribute('position', new THREE.Float32BufferAttribute(fillVerts, 3));
+  var fillMesh = new THREE.Mesh(fillGeo, new THREE.MeshBasicMaterial({
     color: 0x1A1408,
     transparent: true,
     opacity: 0.6,
     side: THREE.DoubleSide
-  });
-  var fillMesh = new THREE.Mesh(fillGeo, fillMat);
+  }));
   scene.add(fillMesh);
 
-  // ==========================================================================
-  // 2. EDIFICIO ABSTRACTO EN WIREFRAME
-  // ==========================================================================
-  var bld = new THREE.Group();
-  scene.add(bld);
-  var floors = [], numFloors = 9, fh = 0.55;
+  // --------------------------------------------------------------------------
+  // SECCIÓN 2: EDIFICIO ABSTRACTO (wireframe que se eleva con el scroll)
+  // Representa esquemáticamente el crecimiento de un edificio en construcción.
+  // Inspirado en la silueta de los edificios de Montvel.
+  // --------------------------------------------------------------------------
+  var building   = new THREE.Group();
+  scene.add(building);
+  var floorGroups = [];
+  var NUM_FLOORS  = 9;
+  var FLOOR_H     = 0.55; // Altura de cada piso (escala visual)
 
-  for (var i = 0; i < numFloors; i++){
-    var w = 11.6 - (i > 5 ? (i - 5) * 1.1 : 0);
-    var d = 8.6  - (i > 5 ? (i - 5) * 0.9 : 0);
-    var fg = new THREE.Group();
-    fg.position.y = i * fh + 0.01;
-    var eg = new THREE.EdgesGeometry(new THREE.BoxGeometry(w, fh, d));
-    var em = lmat(0.45 + i * 0.04, i % 2 === 0 ? GOLD : GOLD_DK);
-    fg.add(new THREE.LineSegments(eg, em));
+  for (var fi = 0; fi < NUM_FLOORS; fi++) {
+    // Los pisos superiores (fi > 5) se van estrechando (efecto de retranqueo)
+    var fw = 11.6 - (fi > 5 ? (fi - 5) * 1.1 : 0);
+    var fd = 8.6  - (fi > 5 ? (fi - 5) * 0.9 : 0);
+    var floorGroup = new THREE.Group();
+    floorGroup.position.y = fi * FLOOR_H + 0.01;
 
-    if (!mobile){
-      for (var k = -w / 2 + 1; k < w / 2; k += 1.6){
-        var colG = new THREE.BufferGeometry().setFromPoints([
-          new THREE.Vector3(k, 0, -d / 2),
-          new THREE.Vector3(k, fh, -d / 2)
+    // Caja del piso en wireframe
+    var edgeGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(fw, FLOOR_H, fd));
+    var edgeMat = lineMat(0.45 + fi * 0.04, fi % 2 === 0 ? GOLD : GOLD_DK);
+    floorGroup.add(new THREE.LineSegments(edgeGeo, edgeMat));
+
+    // Columnas verticales (sólo en desktop para no sobrecargar móvil)
+    if (!isMobile) {
+      for (var kx = -fw / 2 + 1; kx < fw / 2; kx += 1.6) {
+        var colGeo = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(kx, 0,      -fd / 2),
+          new THREE.Vector3(kx, FLOOR_H, -fd / 2)
         ]);
-        fg.add(new THREE.Line(colG, lmat(0.25, GOLD_DK)));
+        floorGroup.add(new THREE.Line(colGeo, lineMat(0.25, GOLD_DK)));
       }
     }
-    bld.add(fg);
-    floors.push(fg);
+
+    building.add(floorGroup);
+    floorGroups.push(floorGroup);
   }
 
-  // Mástil arquitectónico superior
+  // Mástil o antena en la cima del edificio
   var mastGeo = new THREE.BufferGeometry().setFromPoints([
-    new THREE.Vector3(0, numFloors * fh, 0),
-    new THREE.Vector3(0, numFloors * fh + 1.8, 0)
+    new THREE.Vector3(0, NUM_FLOORS * FLOOR_H,       0),
+    new THREE.Vector3(0, NUM_FLOORS * FLOOR_H + 1.8, 0)
   ]);
-  var mast = new THREE.Line(mastGeo, lmat(0.9, GOLD));
-  bld.add(mast);
+  var mast = new THREE.Line(mastGeo, lineMat(0.9, GOLD));
+  building.add(mast);
 
-  // ==========================================================================
-  // 3. ESTRUCTURA 3D DE RACK INDUSTRIAL (Sección #racks)
-  // ==========================================================================
-  var rack = new THREE.Group();
-  rack.position.set(40, 0, 0); // Desplazado en el eje X para enfocar con la cámara
-  scene.add(rack);
+  // --------------------------------------------------------------------------
+  // SECCIÓN 3: RACK INDUSTRIAL 3D (selectivo, 3 bahías)
+  //
+  // Dimensiones basadas en rack selectivo estándar ecuatoriano:
+  //   RW = 1.8m ancho por bahía
+  //   RD = 2.0m profundidad
+  //   RH = 4.4m alto total
+  //   BAYS = 3 bahías en fila (total ~6m de largo)
+  //   SHELVES = 5 niveles de carga por bahía
+  //
+  // La estructura se posiciona en X=40 y la cámara transiciona hacia allá
+  // cuando el usuario scrollea hasta la sección #racks.
+  // --------------------------------------------------------------------------
+  var rackGroup = new THREE.Group();
+  rackGroup.position.set(40, 0, 0); // Separado del plano para la transición de cámara
+  scene.add(rackGroup);
 
-  var pieces = [];
-  function piece(w, h, d, x, y, z, op){
-    var m = lmat(op, GOLD);
-    var e = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(w, h, d)), m);
-    var g = new THREE.Group();
-    g.position.set(x, y, z);
-    g.add(e);
-    g.userData = { y: y, m: m, op: op };
-    rack.add(g);
-    pieces.push(g);
+  var rackPieces = []; // Todos los componentes del rack para animarlos
+  var RW     = 1.8;    // Ancho de una bahía (metros en escala)
+  var RD     = 2.0;    // Profundidad del rack
+  var RH     = 4.4;    // Alto total del rack
+  var BAYS   = 3;      // Número de bahías en fila
+  var SHELVES = 5;     // Niveles de carga por bahía
+
+  /**
+   * Añade un componente rectangular al rack.
+   * Los componentes caen desde arriba al ensamblarse (animación de y).
+   *
+   * @param {number} w, h, d  Dimensiones (ancho, alto, prof)
+   * @param {number} x, y, z  Posición local dentro del rackGroup
+   * @param {number} op       Opacidad final del componente
+   */
+  function piece(w, h, d, x, y, z, op) {
+    var mat = lineMat(op, GOLD);
+    var geo = new THREE.EdgesGeometry(new THREE.BoxGeometry(w, h, d));
+    var seg = new THREE.LineSegments(geo, mat);
+    var grp = new THREE.Group();
+    grp.position.set(x, y, z);
+    grp.add(seg);
+    // Guardamos la posición Y final y la opacidad para la animación
+    grp.userData = { targetY: y, mat: mat, baseOpacity: op };
+    rackGroup.add(grp);
+    rackPieces.push(grp);
   }
 
-  var RW = 1.8, RD = 2.0, RH = 4.4;
-  // Base del rack
-  piece(RW, 0.12, RD, 0, 0.06, 0, 0.95);
-  // Columnas verticales
-  [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(function(c){
-    piece(0.1, RH, 0.1, c[0] * (RW / 2 - 0.05), RH / 2, c[1] * (RD / 2 - 0.05), 0.95);
-  });
-  // Techo del rack
-  piece(RW, 0.12, RD, 0, RH, 0, 0.95);
-  // Bandejas / Estantes interiores
-  for (var i = 0; i < 8; i++){
-    piece(RW - 0.2, 0.05, RD - 0.2, 0, 0.55 + i * 0.5, 0, 0.7);
-  }
-  // Cajas o módulos en estantes
-  if (!mobile){
-    [0, 1, 3, 4, 6].forEach(function(s){
-      piece(RW - 0.3, 0.32, RD - 0.5, 0, 0.55 + s * 0.5 + 0.19, 0, 0.9);
+  // Construir 3 bahías de rack en fila, separadas por RW
+  for (var bay = 0; bay < BAYS; bay++) {
+    var bx = (bay - (BAYS - 1) / 2) * (RW + 0.05); // X centrado
+
+    // BASE del rack (plataforma inferior)
+    piece(RW, 0.10, RD, bx, 0.05, 0, 0.95);
+
+    // CUATRO COLUMNAS VERTICALES por bahía
+    var colOffsets = [
+      [-RW / 2 + 0.05, -RD / 2 + 0.05],
+      [ RW / 2 - 0.05, -RD / 2 + 0.05],
+      [ RW / 2 - 0.05,  RD / 2 - 0.05],
+      [-RW / 2 + 0.05,  RD / 2 - 0.05]
+    ];
+    colOffsets.forEach(function (co) {
+      piece(0.08, RH, 0.08, bx + co[0], RH / 2, co[1], 0.95);
     });
+
+    // TRAVESAÑOS HORIZONTALES frontales y traseros (arriostramiento)
+    for (var level = 0; level <= SHELVES; level++) {
+      var ty = (level / SHELVES) * RH;
+      // Travesaño frontal
+      piece(RW - 0.1, 0.06, 0.06, bx, ty, -RD / 2 + 0.03, 0.80);
+      // Travesaño trasero
+      piece(RW - 0.1, 0.06, 0.06, bx, ty,  RD / 2 - 0.03, 0.80);
+    }
+
+    // ESTANTES / BANDEJAS de carga (planos horizontales internos)
+    // Los primeros SHELVES niveles tienen bandeja; el último es el techo
+    for (var sh = 1; sh <= SHELVES; sh++) {
+      var sy = (sh / SHELVES) * RH * 0.9 + 0.1;
+      piece(RW - 0.15, 0.04, RD - 0.15, bx, sy, 0, 0.75);
+    }
+
+    // CAJAS/PALLETS en estantes alternos (decorativo, representa carga)
+    if (!isMobile) {
+      [1, 3, 5].forEach(function (shIdx) {
+        var py = (shIdx / SHELVES) * RH * 0.9 + 0.1 + 0.12;
+        piece(RW - 0.3, 0.28, RD - 0.4, bx, py, 0, 0.88);
+      });
+    }
   }
 
-  // ==========================================================================
-  // 4. ANIMACIÓN Y VINCULACIÓN AL SCROLL Y RATÓN
-  // ==========================================================================
-  var racksEl = document.getElementById("racks");
-  var cur = { plan: 0, bld: 0, rack: 0, rf: 0, p: 0, mx: 0, my: 0 };
-  var tgt = { plan: 0, bld: 0, rack: 0, rf: 0, p: 0, mx: 0, my: 0 };
-  var t0 = performance.now();
-  var v1 = new THREE.Vector3(), v2 = new THREE.Vector3();
-  var t1 = new THREE.Vector3(0, 1.6, 0), t2 = new THREE.Vector3(40, 2.2, 0);
+  // VIGA SUPERIOR LONGITUDINAL que une las 3 bahías (riostra de cabeza)
+  var totalWidth = BAYS * (RW + 0.05) - 0.05;
+  piece(totalWidth, 0.10, 0.10, 0, RH, -RD / 2 + 0.03, 0.70);
+  piece(totalWidth, 0.10, 0.10, 0, RH,  RD / 2 - 0.03, 0.70);
 
-  function readScroll(){
-    var max = document.documentElement.scrollHeight - window.innerHeight;
-    tgt.p = max > 0 ? clamp(window.scrollY / max, 0, 1) : 0;
+  // --------------------------------------------------------------------------
+  // ESTADO DE ANIMACIÓN Y SCROLL
+  // cur = valores actuales (interpolados suavemente)
+  // tgt = valores objetivo (leídos del estado real de scroll)
+  // --------------------------------------------------------------------------
+  var cur = { plan: 0, bld: 0, rack: 0, rackFocus: 0, scroll: 0, mx: 0, my: 0 };
+  var tgt = { plan: 0, bld: 0, rack: 0, rackFocus: 0, scroll: 0, mx: 0, my: 0 };
+
+  var t0       = performance.now(); // Timestamp de inicio para la animación de intro
+  var racksEl  = document.getElementById('racks'); // Sección del DOM para detectar scroll
+
+  // Puntos de lookAt de la cámara
+  var lookPlan = new THREE.Vector3(0, 1.6, 0);   // Mira al centro del plano
+  var lookRack = new THREE.Vector3(40, 2.2, 0);  // Mira al centro del rack
+
+  /**
+   * Lee el estado actual del scroll y actualiza los valores objetivo (tgt).
+   * Se llama en cada evento "scroll" y en resize.
+   */
+  function readScroll() {
+    var maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    tgt.scroll = maxScroll > 0 ? clamp(window.scrollY / maxScroll, 0, 1) : 0;
 
     if (racksEl) {
-      var r = racksEl.getBoundingClientRect(), vh = window.innerHeight;
-      tgt.rack = clamp((vh * 0.8 - r.top) / (r.height * 0.7), 0, 1);
-      var c = r.top + r.height / 2;
-      tgt.rf = smooth(clamp(1 - Math.abs(c - vh / 2) / (vh * 0.9), 0, 1));
+      var rect = racksEl.getBoundingClientRect();
+      var vh   = window.innerHeight;
+      // rack: 0 cuando la sección está fuera, 1 cuando está bien visible
+      tgt.rack = clamp((vh * 0.8 - rect.top) / (rect.height * 0.7), 0, 1);
+      // rackFocus: cuánto centra la cámara en el rack (máximo cuando centrado)
+      var centerY = rect.top + rect.height / 2;
+      tgt.rackFocus = smooth(clamp(1 - Math.abs(centerY - vh / 2) / (vh * 0.9), 0, 1));
     }
 
-    if (reduce) {
-      tgt.plan = 1; tgt.bld = 1; tgt.rack = 1; tgt.rf = tgt.rf > 0.5 ? 1 : 0; tgt.p = 0.25;
+    // Con prefers-reduced-motion: saltar directamente al estado final
+    if (reduceMotion) {
+      tgt.plan = 1; tgt.bld = 1; tgt.rack = 1;
+      tgt.rackFocus = tgt.rackFocus > 0.5 ? 1 : 0;
+      tgt.scroll = 0.25;
     }
   }
 
-  function update(k){
-    // Interpolación suave (LERP) para evitar saltos bruscos
-    for (var key in cur){
-      cur[key] += (tgt[key] - cur[key]) * k;
+  /**
+   * Actualiza la escena completa para un frame.
+   * @param {number} lerpFactor Factor de interpolación (0–1). 0.07 = suave
+   */
+  function update(lerpFactor) {
+    // Interpolar todos los valores hacia su objetivo
+    for (var key in cur) {
+      cur[key] += (tgt[key] - cur[key]) * lerpFactor;
     }
 
-    var intro = reduce ? 1 : clamp((performance.now() - t0) / 2600, 0, 1);
-    var planT = reduce ? 1 : Math.max(intro * 0.45, tgt.p / 0.1);
-    tgt.plan = clamp(planT, 0, 1);
-    tgt.bld = reduce ? 1 : clamp((tgt.p - 0.02) / 0.45, 0, 1);
+    // ---- Timing del plano (intro al cargar + scroll inicial) ----
+    var elapsed = reduceMotion ? 1 : clamp((performance.now() - t0) / INTRO_DURATION_MS, 0, 1);
+    var planProgress = reduceMotion ? 1 : Math.max(elapsed * 0.45, tgt.scroll / 0.1);
+    tgt.plan = clamp(planProgress, 0, 1);
+    tgt.bld  = reduceMotion ? 1 : clamp((tgt.scroll - 0.02) / 0.45, 0, 1);
 
-    // Dibujado progresivo de líneas del plano
-    var pn = Math.floor(planCount * clamp(cur.plan, 0, 1));
-    pn -= pn % 2;
-    plan.geometry.setDrawRange(0, pn);
+    // ---- Dibujado progresivo del plano (setDrawRange) ----
+    // Revela el plano línea a línea para efecto de "trazado en tiempo real"
+    var pn = Math.floor(totalPlanVerts * clamp(cur.plan, 0, 1));
+    pn -= pn % 2; // Siempre pares (cada línea son 2 vértices)
+    planMesh.geometry.setDrawRange(0, pn);
 
-    var gn = Math.floor(gridCount * clamp(cur.plan * 2, 0, 1));
+    var gn = Math.floor(totalGridVerts * clamp(cur.plan * 2, 0, 1));
     gn -= gn % 2;
-    grid.geometry.setDrawRange(0, gn);
+    gridMesh.geometry.setDrawRange(0, gn);
 
+    // Relleno de muros: aparece después de que el contorno esté dibujado
     fillMesh.material.opacity = 0.55 * clamp((cur.plan - 0.15) * 1.5, 0, 1);
 
-    // Elevación de pisos del edificio
-    floors.forEach(function(f, i){
-      var t = clamp(cur.bld * floors.length - i, 0, 1);
-      f.visible = t > 0.001;
-      f.scale.y = Math.max(t, 0.001);
+    // ---- Edificio: pisos se elevan con el scroll ----
+    floorGroups.forEach(function (fg, idx) {
+      var t = clamp(cur.bld * floorGroups.length - idx, 0, 1);
+      fg.visible = t > 0.001;
+      fg.scale.y = Math.max(t, 0.001); // Escala vertical para efecto de crecimiento
     });
-    mast.visible = cur.bld > 0.98;
+    mast.visible = cur.bld > 0.98; // La antena aparece cuando el edificio está completo
 
-    // Ensamblado vertical de componentes del rack
-    pieces.forEach(function(p, i){
-      var t = clamp(cur.rack * pieces.length - i, 0, 1);
+    // ---- Rack: componentes caen en su posición al entrar la sección ----
+    rackPieces.forEach(function (p, idx) {
+      var t = clamp(cur.rack * rackPieces.length - idx, 0, 1);
       p.visible = t > 0.001;
-      p.position.y = p.userData.y + (1 - smooth(t)) * 2.5;
-      p.userData.m.opacity = p.userData.op * t;
+      // La pieza cae desde arriba (desplazamiento Y negativo cuando t=0)
+      p.position.y = p.userData.targetY + (1 - smooth(t)) * 2.5;
+      p.userData.mat.opacity = p.userData.baseOpacity * t;
     });
 
-    // Movimiento cinemático de la cámara
-    var a1 = -0.55 + cur.p * 2.2 + cur.mx * 0.18;
-    var h1 = 6.5 - cur.p * 1.5 + cur.my * 0.6;
-    v1.set(Math.sin(a1) * 15, h1, Math.cos(a1) * 15);
+    // ---- Movimiento de cámara: orbita alrededor del plano/edificio ----
+    var angle1  = -0.55 + cur.scroll * 2.2 + cur.mx * 0.18;
+    var height1 = 6.5 - cur.scroll * 1.5 + cur.my * 0.6;
+    var camPos1 = new THREE.Vector3(
+      Math.sin(angle1) * 15,
+      height1,
+      Math.cos(angle1) * 15
+    );
 
-    var a2 = 0.35 + cur.rack * 0.9 + cur.mx * 0.18;
-    v2.set(40 + Math.sin(a2) * 10, 3.6 + cur.my * 0.4, Math.cos(a2) * 10);
+    // ---- Cámara alternativa: orbita alrededor del rack ----
+    var angle2  = 0.35 + cur.rack * 0.9 + cur.mx * 0.18;
+    var camPos2 = new THREE.Vector3(
+      40 + Math.sin(angle2) * 10,
+      3.6 + cur.my * 0.4,
+      Math.cos(angle2) * 10
+    );
 
-    // Transición suave entre edificio y rack
-    camera.position.lerpVectors(v1, v2, cur.rf);
-    var look = new THREE.Vector3().lerpVectors(t1, t2, cur.rf);
-    camera.lookAt(look);
+    // Transición suave entre las dos posiciones de cámara según el foco
+    camera.position.lerpVectors(camPos1, camPos2, cur.rackFocus);
+    var lookTarget = new THREE.Vector3().lerpVectors(lookPlan, lookRack, cur.rackFocus);
+    camera.lookAt(lookTarget);
 
     renderer.render(scene, camera);
   }
 
-  // Redimensionamiento responsive
-  function resize(){
+  // --------------------------------------------------------------------------
+  // RESIZE RESPONSIVE
+  // Recalcula el tamaño del canvas y el aspect ratio de la cámara.
+  // --------------------------------------------------------------------------
+  function onResize() {
     var w = window.innerWidth, h = window.innerHeight;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
+    // En pantallas anchas, desplazar el centro de proyección para dejar
+    // espacio visual al texto que se superpone sobre el canvas
     if (w >= 900) {
       camera.setViewOffset(w, h, -w * 0.1, 0, w, h);
     } else {
@@ -386,32 +612,42 @@
     }
     camera.updateProjectionMatrix();
     readScroll();
-    if (reduce) update(1);
+    if (reduceMotion) update(1);
   }
 
-  window.addEventListener("resize", resize);
-  window.addEventListener("scroll", function(){
+  // --------------------------------------------------------------------------
+  // EVENTOS
+  // --------------------------------------------------------------------------
+  window.addEventListener('resize', onResize);
+  window.addEventListener('scroll', function () {
     readScroll();
-    if (reduce) update(1);
+    if (reduceMotion) update(1);
   }, { passive: true });
 
-  // Paralaje de ratón (sólo en desktop con puntero preciso)
-  if (!reduce && !mobile && window.matchMedia("(pointer: fine)").matches){
-    window.addEventListener("mousemove", function(e){
-      tgt.mx = (e.clientX / window.innerWidth - 0.5) * 2;
+  // Paralaje de ratón (sólo en desktop con puntero preciso para no afectar táctil)
+  if (!reduceMotion && !isMobile && window.matchMedia('(pointer: fine)').matches) {
+    window.addEventListener('mousemove', function (e) {
+      tgt.mx = (e.clientX / window.innerWidth  - 0.5) * 2;
       tgt.my = (e.clientY / window.innerHeight - 0.5) * 2;
     }, { passive: true });
   }
 
-  resize();
-  if (reduce) {
+  // --------------------------------------------------------------------------
+  // ARRANQUE
+  // --------------------------------------------------------------------------
+  onResize(); // Inicializar dimensiones
+
+  if (reduceMotion) {
+    // Sin animación: renderizar el estado final directamente
     update(1);
     return;
   }
 
   // Bucle de renderizado continuo a 60 FPS
-  (function loop(){
-    update(0.07);
+  // requestAnimationFrame delega al navegador para sincronizar con el refresh rate
+  (function loop() {
+    update(0.07); // 0.07 = factor de lerp suave (~7% de acercamiento por frame)
     requestAnimationFrame(loop);
   })();
-})();
+
+})(); // Fin del IIFE — todo queda encapsulado, sin contaminar el scope global

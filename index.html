@@ -236,16 +236,50 @@
   <span>WhatsApp</span>
 </a>
 
-    <!-- Scripts con Fallback Local para CDN -->
+    <!--
+      =========================================================
+      CARGA DE SCRIPTS — ORDEN OBLIGATORIO:
+      1. app.js         → utilidades generales (sin Three.js)
+      2. three.min.js   → motor 3D (CDN con fallback local)
+      3. scene3d.js     → animación WebGL (depende de THREE)
+      4. form.js        → validación del formulario de contacto
+      =========================================================
+      IMPORTANTE PARA DESARROLLADORES:
+      - NO reordenar estos scripts. scene3d.js REQUIERE que THREE
+        esté disponible globalmente antes de ejecutarse.
+      - El fallback local carga assets/vendor/three/three.min.js
+        si el CDN no está disponible (p.ej. sin internet).
+      - En desarrollo local, usa http://localhost:8080 (nunca file://)
+        porque WebGL falla en el protocolo file:// por restricciones
+        de seguridad del navegador.
+    -->
     <script src="assets/js/app.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- Three.js r128 — primero CDN, si falla carga la copia local -->
     <script>
-      // Fallback local: Si Three.js no cargó desde CDNJS, cargar la copia local
-      if (typeof THREE === 'undefined') {
-        document.write('<script src="assets/vendor/three/three.min.js"><\/script>');
-      }
+      (function() {
+        // Intentar cargar Three.js desde CDN; si falla en 3s, usar local
+        var cdnScript = document.createElement('script');
+        cdnScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+        cdnScript.onerror = function() {
+          // CDN no disponible → fallback al archivo local
+          var localScript = document.createElement('script');
+          localScript.src = 'assets/vendor/three/three.min.js';
+          localScript.onload = loadScene;
+          document.head.appendChild(localScript);
+        };
+        cdnScript.onload = loadScene;
+        document.head.appendChild(cdnScript);
+
+        function loadScene() {
+          // Cargar scene3d.js SOLO después de que THREE esté listo
+          var s = document.createElement('script');
+          s.src = 'assets/js/scene3d.js';
+          document.body.appendChild(s);
+        }
+      })();
     </script>
-    <script src="assets/js/scene3d.js"></script>
+
     <script src="assets/js/form.js"></script>
 </body>
 </html>
