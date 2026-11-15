@@ -355,7 +355,7 @@
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     if (w >= 900) {
-      camera.setViewOffset(w, h, -w * 0.2, 0, w, h);
+      camera.setViewOffset(w, h, -w * 0.1, 0, w, h);
     } else {
       camera.clearViewOffset();
     }
