@@ -12,13 +12,39 @@
     <!-- Fallback local para tipografía si Google Fonts no está disponible -->
     <noscript><link rel="stylesheet" href="assets/vendor/fonts/fonts.css"></noscript>
     <link rel="stylesheet" href="assets/css/styles.css">
+
+    <!--
+      GLightbox — galería lightbox ultraligera (~14KB CSS + 56KB JS, sin dependencias).
+      Es la opción gratuita más rápida disponible (supera a Fancybox, Magnific, etc.).
+      CDN primario: jsDelivr; fallback local en assets/vendor/glightbox/.
+      Docs: https://biati-digital.github.io/glightbox/
+    -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox@3.3.0/dist/css/glightbox.min.css">
+    <noscript><link rel="stylesheet" href="assets/vendor/glightbox/glightbox.min.css"></noscript>
 </head>
 <body>
 <a class="skip" href="#contenido">Saltar al contenido</a>
 
 <header class="top">
   <div class="wrap">
-    <a class="logo" href="#inicio" data-c="name">[NOMBRE DE LA CONSTRUCTORA]</a>
+    <a class="logo" href="#inicio" aria-label="Montvel Constructora — ir al inicio">
+      <!--
+        LOGO EN LA BARRA DE NAVEGACIÓN
+        ════════════════════════════════════════════════════════════════
+        Para colocar tu logo real:
+          1. Reemplaza assets/images/logo.svg con tu propio archivo SVG o PNG.
+          2. El <img> carga el logo automáticamente. No toques el <span> de fallback.
+          3. Dimensiones óptimas: ancho libre, alto máximo 44px (la nav mide 72px).
+          4. Formato recomendado: SVG (escala infinita) o PNG-24 con transparencia.
+        ════════════════════════════════════════════════════════════════
+      -->
+      <img src="assets/images/logo.svg"
+           alt="Montvel Constructora"
+           class="logo-img"
+           width="200" height="44"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">
+      <span class="logo-txt" style="display:none" data-c="name">[NOMBRE DE LA CONSTRUCTORA]</span>
+    </a>
     <button class="burger" type="button" aria-expanded="false" aria-controls="menu">Menú</button>
     <nav class="menu" id="menu" aria-label="Principal">
       <a class="link" href="#servicios">Obras</a>
@@ -111,22 +137,178 @@
     <div class="wrap">
       <div class="sec-head">
         <h2 id="t-proy">Proyectos destacados</h2>
-        <p class="lead">Datos de ejemplo: reemplaza por tus obras reales.</p>
+        <p class="lead">Haz clic en cada imagen para verla ampliada con descripción completa.</p>
       </div>
-      <div class="grid3">
-        <article class="proj">
-          <div class="art"><svg viewBox="0 0 320 240" role="img" aria-label="Dibujo lineal de una casa de dos niveles"><path d="M40 200h240M70 200v-90h120v90M190 200v-60h60v60M60 110l70-40 70 40M90 200v-40h30v40M150 130h20v20h-20z"/></svg></div>
-          <div class="body"><h3>Casa de dos niveles</h3><p class="meta">Obra nueva, <span data-c="city">[CIUDAD]</span>, 2024</p></div>
+
+      <!--
+        ════════════════════════════════════════════════════════════════════
+        GALERÍA DE PROYECTOS — GLightbox
+        ════════════════════════════════════════════════════════════════════
+        CÓMO AGREGAR O EDITAR UN PROYECTO:
+
+        Cada <article class="gal-card"> representa una foto de proyecto.
+        Atributos de <a class="glightbox"> que debes conocer:
+
+          href="..."          → Ruta a la imagen GRANDE (lightbox la abre a pantalla completa).
+                                Coloca tus fotos en assets/images/proyectos/
+                                Ej: assets/images/proyectos/casa-norte-full.jpg
+
+          data-title="..."    → Título que aparece debajo de la imagen en el lightbox.
+          data-description="..."→ Descripción larga (HTML permitido dentro, usa &amp;, etc.).
+          data-gallery="proy" → Todas las fotos con el mismo valor forman una galería
+                                conectada (flechas prev/next). No cambiar este valor.
+
+        La imagen del thumbnail (<img src="...">) puede ser una versión más
+        pequeña/comprimida de la misma foto para carga rápida.
+
+        TAMAÑOS RECOMENDADOS:
+          Thumbnail: 640×480 px, JPEG calidad 75–80, < 80 KB
+          Full (lightbox): 1920×1440 px, JPEG calidad 85, < 400 KB
+
+        PARA AGREGAR UN PROYECTO NUEVO: duplica uno de los <article> de abajo.
+        ════════════════════════════════════════════════════════════════════
+      -->
+      <div class="gal-grid">
+
+        <!-- ── Proyecto 1 ─────────────────────────────────────────── -->
+        <article class="gal-card">
+          <a class="glightbox"
+             href="assets/images/proyectos/p1-full.jpg"
+             data-gallery="proy"
+             data-title="Casa de dos niveles — Obra nueva"
+             data-description="Construcción desde cero: excavación, estructura de hormigón armado, acabados y entrega de llaves. <strong>Ciudad, 2024.</strong>">
+            <!--
+              Reemplaza este SVG placeholder con una etiqueta <img> apuntando
+              a tu foto real. Ejemplo:
+              <img src="assets/images/proyectos/p1-thumb.jpg"
+                   alt="Casa de dos niveles, obra nueva 2024"
+                   class="gal-thumb" width="640" height="480" loading="lazy">
+            -->
+            <div class="gal-thumb gal-placeholder" aria-hidden="true">
+              <svg viewBox="0 0 320 240" aria-hidden="true"><path d="M40 200h240M70 200v-90h120v90M190 200v-60h60v60M60 110l70-40 70 40M90 200v-40h30v40M150 130h20v20h-20z"/></svg>
+              <span class="gal-ph-label">Foto del proyecto 1</span>
+            </div>
+          </a>
+          <div class="gal-info">
+            <h3>Casa de dos niveles</h3>
+            <p class="meta">Obra nueva · <span data-c="city">[CIUDAD]</span> · 2024</p>
+          </div>
         </article>
-        <article class="proj">
-          <div class="art"><svg viewBox="0 0 320 240" role="img" aria-label="Dibujo lineal de una cocina remodelada"><path d="M40 200h240M40 60h240v140M60 120h200M60 160h200M100 60v60M160 60v60M220 60v60M90 100h20M150 100h20M210 100h20"/></svg></div>
-          <div class="body"><h3>Remodelación de local</h3><p class="meta">Remodelación, <span data-c="city">[CIUDAD]</span>, 2023</p></div>
+
+        <!-- ── Proyecto 2 ─────────────────────────────────────────── -->
+        <article class="gal-card">
+          <a class="glightbox"
+             href="assets/images/proyectos/p2-full.jpg"
+             data-gallery="proy"
+             data-title="Remodelación de local comercial"
+             data-description="Reforma completa de cocina industrial, instalaciones y fachada con obra limpia y plazo cumplido. <strong>Ciudad, 2023.</strong>">
+            <div class="gal-thumb gal-placeholder" aria-hidden="true">
+              <svg viewBox="0 0 320 240" aria-hidden="true"><path d="M40 200h240M40 60h240v140M60 120h200M60 160h200M100 60v60M160 60v60M220 60v60M90 100h20M150 100h20M210 100h20"/></svg>
+              <span class="gal-ph-label">Foto del proyecto 2</span>
+            </div>
+          </a>
+          <div class="gal-info">
+            <h3>Remodelación de local</h3>
+            <p class="meta">Remodelación · <span data-c="city">[CIUDAD]</span> · 2023</p>
+          </div>
         </article>
-        <article class="proj">
-          <div class="art"><svg viewBox="0 0 320 240" role="img" aria-label="Dibujo lineal de una ampliación de edificio"><path d="M40 200h240M60 200V90h100v110M160 200V50h100v150M60 130h100M160 90h100M160 130h100M160 170h100M110 90V50h50"/></svg></div>
-          <div class="body"><h3>Ampliación de planta alta</h3><p class="meta">Ampliación, <span data-c="city">[CIUDAD]</span>, 2022</p></div>
+
+        <!-- ── Proyecto 3 ─────────────────────────────────────────── -->
+        <article class="gal-card">
+          <a class="glightbox"
+             href="assets/images/proyectos/p3-full.jpg"
+             data-gallery="proy"
+             data-title="Ampliación de planta alta"
+             data-description="Ampliación estructural de segundo piso con viga de hormigón armado, losa y cubierta. <strong>Ciudad, 2022.</strong>">
+            <div class="gal-thumb gal-placeholder" aria-hidden="true">
+              <svg viewBox="0 0 320 240" aria-hidden="true"><path d="M40 200h240M60 200V90h100v110M160 200V50h100v150M60 130h100M160 90h100M160 130h100M160 170h100M110 90V50h50"/></svg>
+              <span class="gal-ph-label">Foto del proyecto 3</span>
+            </div>
+          </a>
+          <div class="gal-info">
+            <h3>Ampliación de planta alta</h3>
+            <p class="meta">Ampliación · <span data-c="city">[CIUDAD]</span> · 2022</p>
+          </div>
         </article>
-      </div>
+
+        <!-- ── Proyecto 4 ─────────────────────────────────────────── -->
+        <article class="gal-card">
+          <a class="glightbox"
+             href="assets/images/proyectos/p4-full.jpg"
+             data-gallery="proy"
+             data-title="Rack selectivo para almacén — 3 bahías"
+             data-description="Fabricación e instalación de rack selectivo de 3 bahías × 1.8 m ancho × 4.4 m alto, con 5 niveles de carga. Calculado para zona sísmica NEC. <strong>Ciudad, 2024.</strong>">
+            <div class="gal-thumb gal-placeholder" aria-hidden="true">
+              <svg viewBox="0 0 320 240" aria-hidden="true">
+                <!-- Rack esquemático: 3 columnas, 5 niveles -->
+                <line x1="60" y1="30"  x2="60"  y2="210"/>
+                <line x1="140" y1="30" x2="140" y2="210"/>
+                <line x1="220" y1="30" x2="220" y2="210"/>
+                <line x1="300" y1="30" x2="300" y2="210"/>
+                <line x1="55"  y1="210" x2="305" y2="210"/>
+                <line x1="55"  y1="30"  x2="305" y2="30"/>
+                <line x1="55"  y1="66"  x2="305" y2="66"/>
+                <line x1="55"  y1="102" x2="305" y2="102"/>
+                <line x1="55"  y1="138" x2="305" y2="138"/>
+                <line x1="55"  y1="174" x2="305" y2="174"/>
+                <!-- Pallets en estantes alternos -->
+                <rect x="62" y="68" width="76" height="32" stroke-width=".8"/>
+                <rect x="142" y="104" width="76" height="32" stroke-width=".8"/>
+                <rect x="222" y="68" width="76" height="32" stroke-width=".8"/>
+                <rect x="62" y="140" width="76" height="32" stroke-width=".8"/>
+                <rect x="142" y="176" width="76" height="32" stroke-width=".8"/>
+              </svg>
+              <span class="gal-ph-label">Foto del proyecto 4</span>
+            </div>
+          </a>
+          <div class="gal-info">
+            <h3>Rack selectivo — 3 bahías</h3>
+            <p class="meta">Racks · <span data-c="city">[CIUDAD]</span> · 2024</p>
+          </div>
+        </article>
+
+        <!-- ── Proyecto 5 ─────────────────────────────────────────── -->
+        <article class="gal-card">
+          <a class="glightbox"
+             href="assets/images/proyectos/p5-full.jpg"
+             data-gallery="proy"
+             data-title="Bodega industrial — Obra nueva"
+             data-description="Construcción de bodega de 800 m² con estructura metálica, cubierta de zinc y piso de hormigón reforzado. <strong>Ciudad, 2023.</strong>">
+            <div class="gal-thumb gal-placeholder" aria-hidden="true">
+              <svg viewBox="0 0 320 240" aria-hidden="true">
+                <path d="M30 200h260M30 200V120h260v80M30 120l130-70 130 70M120 200v-60h80v60M110 160h20M190 160h20"/>
+              </svg>
+              <span class="gal-ph-label">Foto del proyecto 5</span>
+            </div>
+          </a>
+          <div class="gal-info">
+            <h3>Bodega industrial</h3>
+            <p class="meta">Obra nueva · <span data-c="city">[CIUDAD]</span> · 2023</p>
+          </div>
+        </article>
+
+        <!-- ── Proyecto 6 ─────────────────────────────────────────── -->
+        <article class="gal-card">
+          <a class="glightbox"
+             href="assets/images/proyectos/p6-full.jpg"
+             data-gallery="proy"
+             data-title="Reparación estructural — Grietas y humedades"
+             data-description="Diagnóstico y reparación de fisuras estructurales, impermeabilización de cubierta y saneamiento de humedades en paredes. <strong>Ciudad, 2022.</strong>">
+            <div class="gal-thumb gal-placeholder" aria-hidden="true">
+              <svg viewBox="0 0 320 240" aria-hidden="true">
+                <path d="M50 190h220M50 190V70h220v120M50 70h220M140 70v120M50 130h220M110 100h20M190 100h20M110 160h20M190 160h20"/>
+                <path d="M160 70l-8 25 12 20-10 25 8 30" stroke-width="1.5" opacity=".7"/>
+              </svg>
+              <span class="gal-ph-label">Foto del proyecto 6</span>
+            </div>
+          </a>
+          <div class="gal-info">
+            <h3>Reparación estructural</h3>
+            <p class="meta">Reparación · <span data-c="city">[CIUDAD]</span> · 2022</p>
+          </div>
+        </article>
+
+      </div><!-- /.gal-grid -->
     </div>
   </section>
 
@@ -207,7 +389,23 @@
   <div class="wrap">
     <div class="cols">
       <div>
-        <h4 data-c="name">[NOMBRE DE LA CONSTRUCTORA]</h4>
+        <!--
+          LOGO EN EL FOOTER
+          ══════════════════════════════════════════════════════
+          Mismo archivo que en la nav (assets/images/logo.svg).
+          Se muestra más pequeño: height:36px.
+          Si tu logo se ve mal a ese tamaño, crea un archivo
+          separado assets/images/logo-footer.svg (versión simple).
+          ══════════════════════════════════════════════════════
+        -->
+        <a href="#inicio" class="foot-logo" aria-label="Montvel Constructora — ir al inicio">
+          <img src="assets/images/logo.svg"
+               alt="Montvel Constructora"
+               class="logo-img-footer"
+               width="160" height="36"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">
+          <span style="display:none" data-c="name">[NOMBRE DE LA CONSTRUCTORA]</span>
+        </a>
         <p>Obra nueva, remodelaciones, ampliaciones y racks en <span data-c="city">[CIUDAD]</span>.</p>
       </div>
       <div>
@@ -277,6 +475,42 @@
           s.src = 'assets/js/scene3d.js';
           document.body.appendChild(s);
         }
+      })();
+    </script>
+
+    <!--
+      ════════════════════════════════════════════════════════════════
+      GLightbox — inicialización de la galería de proyectos
+      CDN primario + fallback local garantizan funcionamiento offline.
+      ════════════════════════════════════════════════════════════════
+    -->
+    <script>
+      (function() {
+        function initGLightbox() {
+          if (typeof GLightbox === 'undefined') return;
+          GLightbox({
+            selector: '.glightbox',
+            touchNavigation: true,
+            loop: true,
+            autoplayVideos: true,
+            openEffect: 'zoom',
+            closeEffect: 'fade',
+            keyboardNavigation: true,
+            closeButton: true,
+            moreLength: 0
+          });
+        }
+
+        var glScript = document.createElement('script');
+        glScript.src = 'https://cdn.jsdelivr.net/npm/glightbox@3.3.0/dist/js/glightbox.min.js';
+        glScript.onload = initGLightbox;
+        glScript.onerror = function() {
+          var local = document.createElement('script');
+          local.src = 'assets/vendor/glightbox/glightbox.min.js';
+          local.onload = initGLightbox;
+          document.body.appendChild(local);
+        };
+        document.body.appendChild(glScript);
       })();
     </script>
 

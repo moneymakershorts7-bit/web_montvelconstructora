@@ -148,10 +148,29 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
 .wa svg{width:24px;height:24px;fill:currentColor}
 .wa:hover{filter:brightness(1.08) saturate(1.1)}
 
+/* Logo Navbar & Footer */
+.logo-img{height:44px;width:auto;max-width:220px;object-fit:contain;display:block}
+.foot-logo{display:inline-block;margin-bottom:14px;text-decoration:none}
+.logo-img-footer{height:36px;width:auto;max-width:180px;object-fit:contain;display:block}
+
+/* Galería de Proyectos (GLightbox) */
+.gal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.gal-card{background:rgba(11,11,11,.82);border:1px solid var(--line-dark);overflow:hidden;transition:border-color .2s,transform .2s}
+.gal-card:hover{border-color:var(--gold);transform:translateY(-2px)}
+.gal-card a.glightbox{display:block;cursor:zoom-in;text-decoration:none;position:relative}
+.gal-thumb{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}
+.gal-placeholder{aspect-ratio:4/3;background:rgba(201,165,92,.05);border-bottom:1px solid var(--line-dark);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+.gal-placeholder svg{width:100%;height:100%;stroke:var(--gold);fill:none;stroke-width:1;opacity:.85}
+.gal-ph-label{position:absolute;bottom:8px;right:10px;font-size:0.75rem;color:var(--muted-dark);background:rgba(11,11,11,.75);padding:2px 8px;border:1px solid var(--line-dark);letter-spacing:0.05em}
+.gal-info{padding:20px 24px 24px}
+.gal-info h3{font-size:1.4rem;margin-bottom:6px;font-family:var(--serif)}
+.gal-info .meta{color:var(--muted-dark);font-size:.9rem}
+
 /* Responsive */
 @media (max-width:1000px){
   .grid4{grid-template-columns:repeat(2,1fr)}
   .steps{grid-template-columns:repeat(2,1fr)}
+  .gal-grid{grid-template-columns:repeat(2,1fr)}
 }
 @media (max-width:860px){
   .burger{display:inline-flex;align-items:center}
@@ -160,6 +179,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
   .menu a.link{padding:14px 0;border-bottom:1px solid var(--line-dark)}
   .menu .btn{margin-top:16px}
   .grid3{grid-template-columns:1fr}
+  .gal-grid{grid-template-columns:1fr}
   .contact-grid{grid-template-columns:1fr}
   .foot .cols{grid-template-columns:1fr}
 }

@@ -1,0 +1,80 @@
+<!--
+  ============================================================
+  PLANTILLA DE LOGO — MONTVEL CONSTRUCTORA
+  ============================================================
+
+  CÓMO USAR ESTE ARCHIVO:
+  ────────────────────────
+  1. Coloca tu logo real en:
+       assets/images/logo.png   (preferir PNG con fondo transparente)
+       assets/images/logo.svg   (aún mejor: vectorial, escala perfecto)
+
+  2. En index.html, el elemento logo ya apunta a assets/images/logo.svg
+     (si no existe el archivo, se muestra el texto de fallback).
+
+  3. Dimensiones recomendadas para el PNG:
+       - Ancho: 240px mínimo (el navegador lo escala)
+       - Alto:  60px máximo (la barra de nav mide 72px)
+       - DPI:   72–96 para web (no necesitas 300 DPI)
+       - Fondo: transparente (PNG-24)
+
+  4. Para el footer, se usa el mismo archivo pero más pequeño (height:36px).
+
+  ESTE ARCHIVO SVG es el placeholder temporal con instrucciones.
+  Cuando tengas tu logo real, reemplaza assets/images/logo.svg
+  con tu propio SVG/PNG y borra este archivo de instrucciones.
+  ============================================================
+-->
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 240 60"
+     width="240" height="60"
+     role="img"
+     aria-label="Placeholder de logo — reemplazar con logo real">
+
+  <!-- Fondo de referencia (semitransparente, solo visible en edición) -->
+  <rect width="240" height="60" fill="#1a1408" rx="2"/>
+
+  <!-- Ícono arquitectónico esquemático (silueta de edificio + techos) -->
+  <g stroke="#D4AF55" stroke-width="1.2" fill="none" stroke-linecap="square">
+    <!-- Edificio principal -->
+    <rect x="12" y="22" width="22" height="28" stroke-width="1.4"/>
+    <!-- Torre lateral -->
+    <rect x="20" y="12" width="8" height="38" stroke-width="1.4"/>
+    <!-- Ventanas edificio izq -->
+    <rect x="15" y="26" width="4" height="5"/>
+    <rect x="15" y="35" width="4" height="5"/>
+    <!-- Ventanas torre -->
+    <rect x="22" y="15" width="4" height="4"/>
+    <rect x="22" y="23" width="4" height="4"/>
+    <rect x="22" y="31" width="4" height="4"/>
+    <!-- Antena / Mástil -->
+    <line x1="24" y1="12" x2="24" y2="6"/>
+    <!-- Suelo -->
+    <line x1="8" y1="50" x2="42" y2="50"/>
+  </g>
+
+  <!-- Nombre de empresa — tipografía estilo Cormorant -->
+  <text x="52" y="30"
+        font-family="Cormorant Garamond, Georgia, serif"
+        font-size="17" font-weight="600"
+        fill="#F5F4F0" letter-spacing="0.5">MONTVEL</text>
+
+  <!-- Tagline / subtítulo -->
+  <text x="52" y="46"
+        font-family="Inter, system-ui, sans-serif"
+        font-size="9" font-weight="400"
+        fill="#B9B5AA" letter-spacing="2">CONSTRUCTORA</text>
+
+  <!-- Separador vertical decorativo -->
+  <line x1="46" y1="14" x2="46" y2="52"
+        stroke="#D4AF55" stroke-width="0.8" opacity="0.5"/>
+
+  <!-- Indicador "PLACEHOLDER" (eliminar en producción) -->
+  <rect x="1" y="1" width="238" height="58"
+        fill="none" stroke="#D4AF55" stroke-width="1" stroke-dasharray="4 3" opacity="0.4"/>
+  <text x="120" y="8"
+        font-family="monospace" font-size="6"
+        fill="#D4AF55" text-anchor="middle" opacity="0.6">
+    REEMPLAZAR CON LOGO REAL
+  </text>
+</svg>
