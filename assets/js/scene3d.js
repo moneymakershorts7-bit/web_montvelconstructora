@@ -1,58 +1,27 @@
 /**
  * ============================================================================
- * scene3d.js — Animación WebGL 3D para Montvel Constructora (v2)
+ * scene3d.js — Animación WebGL 3D para Montvel Constructora (v3)
  * ============================================================================
  *
- * ESCENA CONSTRUIDA A PARTIR DE DATOS REALES:
+ * Animación ligada al SCROLL:
+ *   1. PLANO (hero)     → se traza y las paredes se levantan
+ *   2. EDIFICIO         → los pisos se construyen de abajo hacia arriba
+ *   3. RACK SELECTIVO   → columnas y travesaños se levantan nivel a nivel
  *
- * 1. PLANO ARQUITECTÓNICO (sección hero)
- *    Inspirado en la Basílica del Voto Nacional (Quito) — el edificio más
- *    icónico de Ecuador:
- *      • Planta de cruz latina (nave central + naves laterales + transepto)
- *      • Bases de las torres gemelas en la fachada principal
- *      • Capillas laterales indicadas como recesos
- *      • Ejes de referencia estructurales y cuadrícula técnica
- *    Se dibuja progresivamente al cargar (efecto de trazado en tiempo real).
+ * Inspiración:
+ *   - Planta cruz latina (Basílica del Voto Nacional, Quito)
+ *   - Racks selectivos estándar Ecuador (bahía 2.4 m, 5 niveles, pasillo 3.2 m)
  *
- * 2. EDIFICIO EN CONSTRUCCIÓN (scroll intermedio)
- *    Wireframe de 9 pisos que se elevan con el scroll. Los pisos superiores
- *    se retranquean (setback), evocando torres modernas ecuatorianas
- *    (IQON / The Point) y el crecimiento de una obra real.
- *
- * 3. RACK SELECTIVO PARA DEPÓSITO (sección #racks)
- *    Dimensiones basadas en racks selectivos estándar usados en Ecuador:
- *      • Bahía: ~2.4 m de ancho (2 pallets) × 1.1 m profundidad de upright
- *      • Alto total: 4.5 m / 5 niveles de carga
- *      • 2 filas back-to-back + pasillo central de ~3.2 m (reach truck)
- *      • 3 bahías por fila
- *    Los componentes se ensamblan animadamente al entrar la sección al viewport.
- *
- * ============================================================================
- * CÓMO MODIFICAR:
- *   GOLD / GOLD_DK          → colores de línea
- *   INTRO_DURATION_MS       → duración del dibujado del plano
- *   wall() / axis()         → geometría de la planta
- *   RW, RD, RH, BAYS, LEVELS→ dimensiones del rack
- *   piece()                 → añade un componente al rack
- *   factor 0.07 en loop()   → suavidad del lerp de scroll
- * ============================================================================
- * Requisitos: Three.js r128 cargado antes, canvas#bg3d, sección#racks.
- * Servir por HTTP (no file://).
+ * Requisitos: Three.js r128, canvas#bg3d, sección#racks. Servir por HTTP.
  * ============================================================================
  */
 
 (function () {
 
-  // --------------------------------------------------------------------------
-  // CONSTANTES
-  // --------------------------------------------------------------------------
   var GOLD    = 0xE8C877;
   var GOLD_DK = 0xB38A32;
-  var INTRO_DURATION_MS = 2800;
+  var INTRO_DURATION_MS = 2200;
 
-  // --------------------------------------------------------------------------
-  // DETECCIÓN DE ENTORNO
-  // --------------------------------------------------------------------------
   var canvas = document.getElementById('bg3d');
   if (!canvas) return;
 
@@ -66,7 +35,7 @@
   }
 
   // --------------------------------------------------------------------------
-  // RENDERER (intentos progresivos)
+  // RENDERER
   // --------------------------------------------------------------------------
   var renderer = null;
   var rendererConfigs = [
@@ -92,15 +61,9 @@
 
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2));
 
-  // --------------------------------------------------------------------------
-  // ESCENA Y CÁMARA
-  // --------------------------------------------------------------------------
   var scene  = new THREE.Scene();
   var camera = new THREE.PerspectiveCamera(40, 1, 0.1, 200);
 
-  // --------------------------------------------------------------------------
-  // UTILIDADES
-  // --------------------------------------------------------------------------
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
   function smooth(t) { return t * t * (3 - 2 * t); }
   function lerp(a, b, t) { return a + (b - a) * t; }
@@ -114,7 +77,7 @@
   }
 
   // --------------------------------------------------------------------------
-  // 1. PLANO ARQUITECTÓNICO — CRUZ LATINA (Basílica del Voto Nacional)
+  // 1. PLANO ARQUITECTÓNICO — CRUZ LATINA
   // --------------------------------------------------------------------------
   var planVerts = [];
   var fillVerts = [];
@@ -208,74 +171,61 @@
     circle(x2 + dx * 0.5, z2 + dz * 0.5, 0.28);
   }
 
-  // --- Planta cruz latina simplificada (Basílica) ---
-  // Nave longitudinal (eje X), transepto (eje Z), torres en fachada oeste.
-  var T = 0.13; // mitad del espesor de muro
+  var T = 0.13;
 
-  // Nave central + laterales (largo ~14, ancho ~9)
-  // Muro sur de la nave
   wall('h', -3.2, -7.5, 6.5, T, [[-5.5, -3.5, 'w'], [-1.5, 0.5, 'w'], [2.5, 4.5, 'w']]);
-  // Muro norte de la nave
   wall('h',  3.2, -7.5, 6.5, T, [[-5.5, -3.5, 'w'], [-1.5, 0.5, 'w'], [2.5, 4.5, 'w']]);
-  // Ábside / cabecera (este)
   wall('v',  6.5, -3.2, 3.2, T, [[-1.2, 1.2, 'w']]);
-  // Fachada principal (oeste) con bases de torres gemelas
-  wall('v', -7.5, -5.0, -1.6, T); // base torre sur
-  wall('v', -7.5,  1.6,  5.0, T); // base torre norte
-  // Puerta principal entre torres
+  wall('v', -7.5, -5.0, -1.6, T);
+  wall('v', -7.5,  1.6,  5.0, T);
   wall('v', -7.5, -1.6, 1.6, T, [[-0.9, 0.9, 'd', 1]]);
 
-  // Transepto (brazos de la cruz)
-  wall('h', -5.8, -2.0, 2.0, T, [[-0.8, 0.8, 'd', -1]]); // brazo sur
-  wall('h',  5.8, -2.0, 2.0, T, [[-0.8, 0.8, 'd',  1]]); // brazo norte
+  wall('h', -5.8, -2.0, 2.0, T, [[-0.8, 0.8, 'd', -1]]);
+  wall('h',  5.8, -2.0, 2.0, T, [[-0.8, 0.8, 'd',  1]]);
   wall('v', -2.0, -5.8, -3.2, T);
   wall('v',  2.0, -5.8, -3.2, T);
   wall('v', -2.0,  3.2,  5.8, T);
   wall('v',  2.0,  3.2,  5.8, T);
 
-  // Capillas laterales (recesos) — 3 por lado
   var chapelZs = [-5.0, -1.0, 3.0];
   for (var ci = 0; ci < chapelZs.length; ci++) {
     var cz = chapelZs[ci];
-    // Sur
     wall('h', -4.6, cz - 0.9, cz + 0.9, T * 0.7);
     wall('v', cz - 0.9, -4.6, -3.2, T * 0.7);
     wall('v', cz + 0.9, -4.6, -3.2, T * 0.7);
-    // Norte
     wall('h',  4.6, cz - 0.9, cz + 0.9, T * 0.7);
     wall('v', cz - 0.9,  3.2,  4.6, T * 0.7);
     wall('v', cz + 0.9,  3.2,  4.6, T * 0.7);
   }
 
-  // Divisiones de naves laterales (arquerías indicadas por muros bajos)
   wall('h', -1.5, -6.5, 5.5, T * 0.55, [[-4, -2.5, 'd', 1], [0.5, 2, 'd', 1]]);
   wall('h',  1.5, -6.5, 5.5, T * 0.55, [[-4, -2.5, 'd', -1], [0.5, 2, 'd', -1]]);
 
-  // Ejes de referencia estructurales
-  axis(-8.5, -6.5,  8.0, -6.5); // Eje A
-  axis(-8.5,  6.5,  8.0,  6.5); // Eje B
-  axis(-8.5, -6.5, -8.5,  6.5); // Eje 1
-  axis( 8.0, -6.5,  8.0,  6.5); // Eje 2
-  axis( 0,   -6.5,  0,    6.5); // Eje central de la nave
+  axis(-8.5, -6.5,  8.0, -6.5);
+  axis(-8.5,  6.5,  8.0,  6.5);
+  axis(-8.5, -6.5, -8.5,  6.5);
+  axis( 8.0, -6.5,  8.0,  6.5);
+  axis( 0,   -6.5,  0,    6.5);
 
-  // Geometría del plano
+  // Grupo del plano: se traza y luego "se levanta" (scale Y)
+  var planGroup = new THREE.Group();
+  scene.add(planGroup);
+
   var planGeo = new THREE.BufferGeometry();
   planGeo.setAttribute('position', new THREE.Float32BufferAttribute(planVerts, 3));
   var planMesh = new THREE.LineSegments(planGeo, lineMat(0.9, GOLD));
-  scene.add(planMesh);
+  planGroup.add(planMesh);
   var totalPlanVerts = planVerts.length / 3;
 
-  // Cuadrícula de referencia
   var gridVerts = [], gs = 1.25;
   for (var gx = -10; gx <= 10; gx += gs) { gridVerts.push(gx, -0.01, -8, gx, -0.01, 8); }
   for (var gz = -8; gz <= 8; gz += gs) { gridVerts.push(-10, -0.01, gz, 10, -0.01, gz); }
   var gridGeo = new THREE.BufferGeometry();
   gridGeo.setAttribute('position', new THREE.Float32BufferAttribute(gridVerts, 3));
   var gridMesh = new THREE.LineSegments(gridGeo, lineMat(0.16, GOLD_DK));
-  scene.add(gridMesh);
+  planGroup.add(gridMesh);
   var totalGridVerts = gridVerts.length / 3;
 
-  // Relleno de muros
   var fillGeo = new THREE.BufferGeometry();
   fillGeo.setAttribute('position', new THREE.Float32BufferAttribute(fillVerts, 3));
   var fillMesh = new THREE.Mesh(fillGeo, new THREE.MeshBasicMaterial({
@@ -284,10 +234,54 @@
     opacity: 0.55,
     side: THREE.DoubleSide
   }));
-  scene.add(fillMesh);
+  planGroup.add(fillMesh);
+
+  // Muros verticales 3D (paredes que se levantan con el scroll)
+  var wallExtrudes = [];
+  var WALL_H = 1.35;
+
+  function makeRisingWall(x1, z1, x2, z2, height) {
+    var pts = [
+      new THREE.Vector3(x1, 0, z1),
+      new THREE.Vector3(x2, 0, z2),
+      new THREE.Vector3(x2, height, z2),
+      new THREE.Vector3(x1, height, z1),
+      new THREE.Vector3(x1, 0, z1)
+    ];
+    var g = new THREE.BufferGeometry().setFromPoints(pts);
+    var m = lineMat(0.55, GOLD);
+    var line = new THREE.Line(g, m);
+    // También verticales en los extremos
+    var v1 = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(x1, 0, z1), new THREE.Vector3(x1, height, z1)
+    ]);
+    var v2 = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(x2, 0, z2), new THREE.Vector3(x2, height, z2)
+    ]);
+    var grp = new THREE.Group();
+    grp.add(line);
+    grp.add(new THREE.Line(v1, m));
+    grp.add(new THREE.Line(v2, m));
+    grp.scale.y = 0.001;
+    planGroup.add(grp);
+    wallExtrudes.push(grp);
+  }
+
+  // Contorno principal de la cruz latina como paredes que se levantan
+  makeRisingWall(-7.5, -3.2,  6.5, -3.2, WALL_H);
+  makeRisingWall(-7.5,  3.2,  6.5,  3.2, WALL_H);
+  makeRisingWall(-7.5, -3.2, -7.5,  3.2, WALL_H);
+  makeRisingWall( 6.5, -3.2,  6.5,  3.2, WALL_H);
+  // Transepto
+  makeRisingWall(-2.0, -5.8,  2.0, -5.8, WALL_H * 0.85);
+  makeRisingWall(-2.0,  5.8,  2.0,  5.8, WALL_H * 0.85);
+  makeRisingWall(-2.0, -5.8, -2.0, -3.2, WALL_H * 0.85);
+  makeRisingWall( 2.0, -5.8,  2.0, -3.2, WALL_H * 0.85);
+  makeRisingWall(-2.0,  3.2, -2.0,  5.8, WALL_H * 0.85);
+  makeRisingWall( 2.0,  3.2,  2.0,  5.8, WALL_H * 0.85);
 
   // --------------------------------------------------------------------------
-  // 2. EDIFICIO EN CONSTRUCCIÓN (wireframe que crece con el scroll)
+  // 2. EDIFICIO — pisos que se levantan de abajo hacia arriba
   // --------------------------------------------------------------------------
   var building = new THREE.Group();
   scene.add(building);
@@ -296,12 +290,14 @@
   var FLOOR_H = 0.52;
 
   for (var fi = 0; fi < NUM_FLOORS; fi++) {
-    // Setback progresivo en los pisos altos (inspirado en torres modernas)
     var setback = fi > 6 ? (fi - 6) * 0.85 : 0;
     var fw = 12.0 - setback;
     var fd = 8.8  - setback * 0.7;
     var floorGroup = new THREE.Group();
-    floorGroup.position.y = fi * FLOOR_H + 0.01;
+    // Guardamos la Y final; al inicio están bajo tierra
+    floorGroup.userData.targetY = fi * FLOOR_H + 0.01;
+    floorGroup.position.y = -2.5; // empiezan hundidos
+    floorGroup.scale.set(1, 0.001, 1);
 
     var edgeGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(fw, FLOOR_H, fd));
     var edgeMat = lineMat(0.42 + fi * 0.035, fi % 2 === 0 ? GOLD : GOLD_DK);
@@ -321,57 +317,59 @@
     floorGroups.push(floorGroup);
   }
 
-  // Mástil / antena en la cima
   var mastGeo = new THREE.BufferGeometry().setFromPoints([
     new THREE.Vector3(0, NUM_FLOORS * FLOOR_H, 0),
     new THREE.Vector3(0, NUM_FLOORS * FLOOR_H + 1.9, 0)
   ]);
   var mast = new THREE.Line(mastGeo, lineMat(0.9, GOLD));
+  mast.visible = false;
   building.add(mast);
 
   // --------------------------------------------------------------------------
-  // 3. RACK SELECTIVO PARA DEPÓSITO (2 filas back-to-back + pasillo)
-  // --------------------------------------------------------------------------
-  // Dimensiones reales aproximadas (escala visual):
-  //   Ancho de bahía (2 pallets) ≈ 2.4 m
-  //   Profundidad upright ≈ 1.1 m
-  //   Alto total ≈ 4.5 m / 5 niveles
-  //   Pasillo central ≈ 3.2 m (reach truck)
+  // 3. RACK SELECTIVO — se construye de abajo hacia arriba
   // --------------------------------------------------------------------------
   var rackGroup = new THREE.Group();
   rackGroup.position.set(42, 0, 0);
   scene.add(rackGroup);
 
   var rackPieces = [];
-  var RW = 2.4;     // ancho de una bahía
-  var RD = 1.1;     // profundidad de upright
-  var RH = 4.5;     // alto total
-  var BAYS = 3;     // bahías por fila
-  var LEVELS = 5;   // niveles de carga
-  var AISLE = 3.2;  // ancho del pasillo central
+  var RW = 2.4;
+  var RD = 1.1;
+  var RH = 4.5;
+  var BAYS = 3;
+  var LEVELS = 5;
+  var AISLE = 3.2;
 
-  function piece(w, h, d, x, y, z, op) {
+  // orderIndex controla el orden de construcción (menor = primero)
+  function piece(w, h, d, x, y, z, op, orderIndex) {
     var mat = lineMat(op, GOLD);
     var geo = new THREE.EdgesGeometry(new THREE.BoxGeometry(w, h, d));
     var seg = new THREE.LineSegments(geo, mat);
     var grp = new THREE.Group();
     grp.position.set(x, y, z);
     grp.add(seg);
-    grp.userData = { targetY: y, mat: mat, baseOpacity: op };
+    grp.userData = {
+      targetY: y,
+      mat: mat,
+      baseOpacity: op,
+      order: orderIndex !== undefined ? orderIndex : 0
+    };
+    // Empiezan hundidos bajo el suelo
+    grp.position.y = -0.4;
+    grp.scale.y = 0.001;
     rackGroup.add(grp);
     rackPieces.push(grp);
   }
 
-  // Construir dos filas de racks enfrentadas (back-to-back)
-  // Fila 1: z negativo, Fila 2: z positivo, pasillo en el medio
-  function buildRow(zBase, side) {
+  function buildRow(zBase) {
     var totalWidth = BAYS * RW;
     var startX = -totalWidth / 2 + RW / 2;
 
     for (var b = 0; b < BAYS; b++) {
       var bx = startX + b * RW;
+      var bayOrder = b * 0.08; // ligero desfase entre bahías
 
-      // Columnas verticales (4 por bahía: 2 front + 2 rear)
+      // Columnas primero (order bajo)
       var colW = 0.08, colD = 0.08;
       var colPositions = [
         [bx - RW / 2 + 0.06, zBase - RD / 2 + 0.06],
@@ -380,42 +378,44 @@
         [bx + RW / 2 - 0.06, zBase + RD / 2 - 0.06]
       ];
       for (var c = 0; c < colPositions.length; c++) {
-        piece(colW, RH, colD, colPositions[c][0], RH / 2, colPositions[c][1], 0.85);
+        piece(colW, RH, colD, colPositions[c][0], RH / 2, colPositions[c][1], 0.85, 0.05 + bayOrder);
       }
 
-      // Travesaños / beams en cada nivel
+      // Footplates
+      piece(0.18, 0.06, 0.18, bx - RW / 2 + 0.06, 0.03, zBase - RD / 2 + 0.06, 0.75, 0.0 + bayOrder);
+      piece(0.18, 0.06, 0.18, bx + RW / 2 - 0.06, 0.03, zBase - RD / 2 + 0.06, 0.75, 0.0 + bayOrder);
+      piece(0.18, 0.06, 0.18, bx - RW / 2 + 0.06, 0.03, zBase + RD / 2 - 0.06, 0.75, 0.0 + bayOrder);
+      piece(0.18, 0.06, 0.18, bx + RW / 2 - 0.06, 0.03, zBase + RD / 2 - 0.06, 0.75, 0.0 + bayOrder);
+
+      // Travesaños por nivel (de abajo hacia arriba)
       for (var lv = 0; lv < LEVELS; lv++) {
         var ly = 0.35 + lv * ((RH - 0.5) / (LEVELS - 1));
-        // Beam frontal y posterior
-        piece(RW - 0.12, 0.06, 0.05, bx, ly, zBase - RD / 2 + 0.04, 0.7);
-        piece(RW - 0.12, 0.06, 0.05, bx, ly, zBase + RD / 2 - 0.04, 0.7);
-        // Cross beams (laterales)
-        piece(0.05, 0.05, RD - 0.1, bx - RW / 2 + 0.08, ly, zBase, 0.55);
-        piece(0.05, 0.05, RD - 0.1, bx + RW / 2 - 0.08, ly, zBase, 0.55);
+        var levelOrder = 0.15 + (lv / LEVELS) * 0.7 + bayOrder;
+        piece(RW - 0.12, 0.06, 0.05, bx, ly, zBase - RD / 2 + 0.04, 0.7, levelOrder);
+        piece(RW - 0.12, 0.06, 0.05, bx, ly, zBase + RD / 2 - 0.04, 0.7, levelOrder);
+        piece(0.05, 0.05, RD - 0.1, bx - RW / 2 + 0.08, ly, zBase, 0.55, levelOrder);
+        piece(0.05, 0.05, RD - 0.1, bx + RW / 2 - 0.08, ly, zBase, 0.55, levelOrder);
       }
 
-      // Base / footplates
-      piece(0.18, 0.06, 0.18, bx - RW / 2 + 0.06, 0.03, zBase - RD / 2 + 0.06, 0.75);
-      piece(0.18, 0.06, 0.18, bx + RW / 2 - 0.06, 0.03, zBase - RD / 2 + 0.06, 0.75);
-      piece(0.18, 0.06, 0.18, bx - RW / 2 + 0.06, 0.03, zBase + RD / 2 - 0.06, 0.75);
-      piece(0.18, 0.06, 0.18, bx + RW / 2 - 0.06, 0.03, zBase + RD / 2 - 0.06, 0.75);
-
-      // Pallets simbólicos en algunos niveles (opcional, solo desktop)
       if (!isMobile && b % 2 === 0) {
         for (var pl = 1; pl < LEVELS; pl += 2) {
           var ply = 0.35 + pl * ((RH - 0.5) / (LEVELS - 1)) + 0.12;
-          piece(1.0, 0.15, 0.9, bx - 0.55, ply, zBase, 0.35);
-          piece(1.0, 0.15, 0.9, bx + 0.55, ply, zBase, 0.35);
+          var palletOrder = 0.2 + (pl / LEVELS) * 0.7 + bayOrder;
+          piece(1.0, 0.15, 0.9, bx - 0.55, ply, zBase, 0.35, palletOrder);
+          piece(1.0, 0.15, 0.9, bx + 0.55, ply, zBase, 0.35, palletOrder);
         }
       }
     }
   }
 
-  // Fila sur (z negativo) y fila norte (z positivo)
-  buildRow(-(AISLE / 2 + RD / 2), -1);
-  buildRow( (AISLE / 2 + RD / 2),  1);
+  buildRow(-(AISLE / 2 + RD / 2));
+  buildRow( (AISLE / 2 + RD / 2));
 
-  // Líneas de pasillo / floor marks
+  // Ordenar piezas por order para construcción secuencial
+  rackPieces.sort(function (a, b) {
+    return a.userData.order - b.userData.order;
+  });
+
   var aisleMat = lineMat(0.25, GOLD_DK);
   var aisleGeo = new THREE.BufferGeometry().setFromPoints([
     new THREE.Vector3(-BAYS * RW / 2 - 0.5, 0.02, -AISLE / 2 + 0.15),
@@ -424,80 +424,111 @@
     new THREE.Vector3( BAYS * RW / 2 + 0.5, 0.02,  AISLE / 2 - 0.15)
   ]);
   var aisleLines = new THREE.LineSegments(aisleGeo, aisleMat);
+  aisleLines.visible = false;
   rackGroup.add(aisleLines);
 
   // --------------------------------------------------------------------------
-  // ESTADO DE ANIMACIÓN
+  // ESTADO
   // --------------------------------------------------------------------------
   var t0 = performance.now();
-  var cur = { plan: 0, bld: 0, rack: 0, rackFocus: 0, scroll: 0, mx: 0, my: 0 };
-  var tgt = { plan: 0, bld: 0, rack: 0, rackFocus: 0, scroll: 0, mx: 0, my: 0 };
+  var cur = { plan: 0, walls: 0, bld: 0, rack: 0, rackFocus: 0, scroll: 0, mx: 0, my: 0 };
+  var tgt = { plan: 0, walls: 0, bld: 0, rack: 0, rackFocus: 0, scroll: 0, mx: 0, my: 0 };
 
-  var lookPlan = new THREE.Vector3(0, 1.5, 0);
+  var lookPlan = new THREE.Vector3(0, 1.2, 0);
   var lookRack = new THREE.Vector3(42, 2.2, 0);
 
   // --------------------------------------------------------------------------
-  // LECTURA DE SCROLL
+  // SCROLL → targets
   // --------------------------------------------------------------------------
   function readScroll() {
     var scrollY = window.pageYOffset || document.documentElement.scrollTop;
     var docH = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
     tgt.scroll = clamp(scrollY / docH, 0, 1);
 
-    // Detectar sección #racks para enfocar la cámara y ensamblar el rack
+    // Plano se traza al inicio; paredes se levantan un poco después
+    // Edificio crece en la zona media del scroll
+    // Rack se construye al llegar a la sección #racks
     var racksEl = document.getElementById('racks');
     if (racksEl) {
       var rect = racksEl.getBoundingClientRect();
       var vh = window.innerHeight;
-      // 0 cuando la sección está debajo, 1 cuando está centrada o arriba
-      var progress = clamp(1 - (rect.top - vh * 0.15) / (vh * 0.7), 0, 1);
+      // progress 0→1 mientras la sección entra y se centra
+      var progress = clamp(1 - (rect.top - vh * 0.2) / (vh * 0.75), 0, 1);
       tgt.rack = progress;
-      tgt.rackFocus = smooth(clamp((progress - 0.15) / 0.6, 0, 1));
+      tgt.rackFocus = smooth(clamp((progress - 0.12) / 0.55, 0, 1));
+    } else {
+      tgt.rack = 0;
+      tgt.rackFocus = 0;
     }
   }
 
   // --------------------------------------------------------------------------
-  // UPDATE (lerp + render)
+  // UPDATE
   // --------------------------------------------------------------------------
   function update(lerpFactor) {
     for (var key in cur) {
       cur[key] += (tgt[key] - cur[key]) * lerpFactor;
     }
 
-    // Plano: intro + scroll inicial
     var elapsed = reduceMotion ? 1 : clamp((performance.now() - t0) / INTRO_DURATION_MS, 0, 1);
-    var planProgress = reduceMotion ? 1 : Math.max(elapsed * 0.5, tgt.scroll / 0.12);
-    tgt.plan = clamp(planProgress, 0, 1);
-    tgt.bld  = reduceMotion ? 1 : clamp((tgt.scroll - 0.03) / 0.42, 0, 1);
 
-    // Dibujado progresivo del plano
-    var pn = Math.floor(totalPlanVerts * clamp(cur.plan, 0, 1));
-    pn -= pn % 2;
-    planMesh.geometry.setDrawRange(0, pn);
+    // —— PLANO: trazo + paredes que se levantan ——
+    // Intro dibuja el plano; el scroll temprano completa y levanta muros
+    var planDraw = reduceMotion ? 1 : Math.max(elapsed, clamp(tgt.scroll / 0.10, 0, 1));
+    tgt.plan = planDraw;
+    // Paredes verticales se levantan un poco después del trazo
+    tgt.walls = reduceMotion ? 1 : clamp((tgt.scroll - 0.02) / 0.18, 0, 1);
 
-    var gn = Math.floor(totalGridVerts * clamp(cur.plan * 1.8, 0, 1));
-    gn -= gn % 2;
-    gridMesh.geometry.setDrawRange(0, gn);
+    var pn = Math.floor(cur.plan * totalPlanVerts);
+    if (pn % 2 === 1) pn -= 1;
+    planMesh.geometry.setDrawRange(0, Math.max(0, pn));
 
-    fillMesh.material.opacity = 0.5 * clamp((cur.plan - 0.12) * 1.6, 0, 1);
+    var gn = Math.floor(cur.plan * totalGridVerts);
+    if (gn % 2 === 1) gn -= 1;
+    gridMesh.geometry.setDrawRange(0, Math.max(0, gn));
 
-    // Edificio: pisos crecen
-    floorGroups.forEach(function (fg, idx) {
-      var t = clamp(cur.bld * floorGroups.length - idx, 0, 1);
-      fg.visible = t > 0.001;
-      fg.scale.y = Math.max(t, 0.001);
+    fillMesh.material.opacity = 0.5 * clamp((cur.plan - 0.15) * 1.5, 0, 1);
+
+    // Paredes 3D se levantan (scale.y 0 → 1)
+    wallExtrudes.forEach(function (w, idx) {
+      var t = clamp(cur.walls * wallExtrudes.length - idx * 0.7, 0, 1);
+      t = smooth(t);
+      w.scale.y = Math.max(t, 0.001);
+      w.visible = t > 0.01;
+      w.children.forEach(function (ch) {
+        if (ch.material) ch.material.opacity = 0.55 * t;
+      });
     });
-    mast.visible = cur.bld > 0.97;
 
-    // Rack: piezas caen en su sitio
+    // —— EDIFICIO: pisos se levantan del suelo ——
+    tgt.bld = reduceMotion ? 1 : clamp((tgt.scroll - 0.05) / 0.40, 0, 1);
+
+    floorGroups.forEach(function (fg, idx) {
+      var t = clamp(cur.bld * (floorGroups.length + 0.5) - idx, 0, 1);
+      t = smooth(t);
+      fg.visible = t > 0.01;
+      fg.scale.y = Math.max(t, 0.001);
+      // Sube desde bajo tierra hasta su altura final
+      fg.position.y = lerp(-2.2, fg.userData.targetY, t);
+    });
+    mast.visible = cur.bld > 0.96;
+    if (mast.material) mast.material.opacity = clamp((cur.bld - 0.96) / 0.04, 0, 1);
+
+    // —— RACK: piezas se levantan de abajo hacia arriba ——
+    // cur.rack ya viene de la sección #racks
     rackPieces.forEach(function (p, idx) {
-      var t = clamp(cur.rack * rackPieces.length - idx, 0, 1);
-      p.visible = t > 0.001;
-      p.position.y = p.userData.targetY + (1 - smooth(t)) * 2.8;
+      // Construye en orden (columnas primero, luego niveles)
+      var t = clamp(cur.rack * (rackPieces.length * 0.55) - idx * 0.55, 0, 1);
+      t = smooth(t);
+      p.visible = t > 0.01;
+      p.scale.y = Math.max(t, 0.001);
+      p.position.y = lerp(-0.5, p.userData.targetY, t);
       p.userData.mat.opacity = p.userData.baseOpacity * t;
     });
+    aisleLines.visible = cur.rack > 0.35;
+    if (aisleLines.material) aisleLines.material.opacity = 0.25 * clamp((cur.rack - 0.35) / 0.3, 0, 1);
 
-    // Cámara: órbita alrededor del plano → transición al rack
+    // —— CÁMARA ——
     var angle1  = -0.55 + cur.scroll * 2.0 + cur.mx * 0.16;
     var height1 = 7.2 - cur.scroll * 1.8 + cur.my * 0.5;
     var camPos1 = new THREE.Vector3(
@@ -522,7 +553,7 @@
   }
 
   // --------------------------------------------------------------------------
-  // RESIZE
+  // RESIZE / EVENTOS / LOOP
   // --------------------------------------------------------------------------
   function onResize() {
     var w = window.innerWidth, h = window.innerHeight;
@@ -538,9 +569,6 @@
     if (reduceMotion) update(1);
   }
 
-  // --------------------------------------------------------------------------
-  // EVENTOS
-  // --------------------------------------------------------------------------
   window.addEventListener('resize', onResize);
   window.addEventListener('scroll', function () {
     readScroll();
@@ -554,9 +582,6 @@
     }, { passive: true });
   }
 
-  // --------------------------------------------------------------------------
-  // ARRANQUE
-  // --------------------------------------------------------------------------
   onResize();
 
   if (reduceMotion) {
@@ -565,7 +590,7 @@
   }
 
   (function loop() {
-    update(0.07);
+    update(0.08);
     requestAnimationFrame(loop);
   })();
 
