@@ -18,10 +18,15 @@ p{margin:0}
 a{color:inherit}
 img,svg{max-width:100%}
 .wrap{width:100%;max-width:1180px;margin:0 auto;padding:0 24px}
+
+/* Focus visible — contraste alto */
 :focus-visible{outline:2px solid var(--gold);outline-offset:3px}
 .light :focus-visible{outline-color:var(--black)}
-.skip{position:absolute;left:-999px;top:8px;background:var(--gold);color:var(--black);padding:12px 16px;z-index:100}
-.skip:focus{left:8px}
+.btn:focus-visible,.burger:focus-visible{outline-offset:3px}
+
+/* Skip link accesible */
+.skip{position:absolute;left:-999px;top:8px;background:var(--gold);color:var(--black);padding:12px 16px;z-index:100;font-weight:600;text-decoration:none;border-radius:0}
+.skip:focus,.skip:focus-visible{left:8px;outline:2px solid var(--paper);outline-offset:2px}
 
 /* Fondo 3D */
 #bgfb{position:fixed;inset:0;z-index:0;display:none;background-image:linear-gradient(rgba(201,165,92,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(201,165,92,.08) 1px,transparent 1px);background-size:48px 48px}
@@ -36,13 +41,15 @@ main,footer{position:relative;z-index:1}
 .logo{font-family:var(--serif);font-size:1.5rem;font-weight:600;text-decoration:none;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:46vw}
 .menu{display:flex;align-items:center;gap:28px}
 .menu a.link{text-decoration:none;font-size:.95rem;color:var(--muted-dark);padding:12px 0;position:relative}
-.menu a.link:hover{color:var(--paper)}
+.menu a.link:hover,.menu a.link:focus-visible{color:var(--paper)}
 .menu a.link::after{content:"";position:absolute;left:0;right:0;bottom:6px;height:1px;background:var(--gold-grad);transform:scaleX(0);transform-origin:left;transition:transform .25s}
-.menu a.link:hover::after{transform:scaleX(1)}
+@media (prefers-reduced-motion:reduce){.menu a.link::after{transition:none}}
+.menu a.link:hover::after,.menu a.link:focus-visible::after{transform:scaleX(1)}
 .burger{display:none;min-height:48px;min-width:48px;background:none;border:1px solid var(--line-dark);color:var(--paper);font:inherit;font-size:.95rem;padding:0 16px;cursor:pointer}
 
 /* Botones */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:48px;padding:0 28px;font:600 1rem/1 var(--sans);text-decoration:none;border:1px solid var(--gold);cursor:pointer;transition:background .2s,color .2s}
+@media (prefers-reduced-motion:reduce){.btn{transition:none}}
 .btn-gold{background:var(--gold-grad);color:var(--black);border-color:#A8802C;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 -1px 0 rgba(120,80,10,.35)}
 .btn-gold:hover{filter:brightness(1.08) saturate(1.1)}
 .btn-line{background:transparent;color:var(--paper)}
@@ -119,6 +126,7 @@ section{position:relative}
 form{background:rgba(11,11,11,.88);border:1px solid var(--line-dark);padding:clamp(24px,4vw,44px)}
 .field{margin-bottom:20px}
 label{display:block;font-size:.95rem;font-weight:500;margin-bottom:8px}
+.optional{font-weight:400;color:var(--muted-dark);font-size:.85em}
 input,select,textarea{width:100%;min-height:48px;padding:12px 14px;font:inherit;color:var(--paper);background:#141414;border:1px solid #8D8A82;border-radius:0}
 textarea{min-height:132px;resize:vertical}
 select{appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--gold) 50%),linear-gradient(135deg,var(--gold) 50%,transparent 50%);background-position:calc(100% - 20px) 50%,calc(100% - 14px) 50%;background-size:6px 6px;background-repeat:no-repeat;padding-right:40px}
@@ -131,6 +139,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
 #status.ok{border-color:var(--gold);color:var(--paper)}
 #status.fail{border-color:#FF9A8B;color:#FFB4A8}
 .form-actions{display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.form-note{margin-top:14px;font-size:.95rem;color:var(--muted-dark)}
 
 /* Pie */
 .foot{background:var(--black);border-top:1px solid var(--line-dark);padding:56px 0 40px}
@@ -140,7 +149,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
 .foot ul{list-style:none;padding:0;margin:0}
 .foot li{margin-bottom:4px}
 .foot a{display:inline-block;padding:6px 0;text-decoration:none}
-.foot a:hover{color:var(--paper)}
+.foot a:hover,.foot a:focus-visible{color:var(--paper)}
 .foot .copy{margin-top:40px;padding-top:24px;border-top:1px solid var(--line-dark);font-size:.9rem;color:var(--muted-dark)}
 
 /* WhatsApp flotante */
@@ -156,8 +165,11 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px soli
 /* Galería de Proyectos (GLightbox) */
 .gal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
 .gal-card{background:rgba(11,11,11,.82);border:1px solid var(--line-dark);overflow:hidden;transition:border-color .2s,transform .2s}
-.gal-card:hover{border-color:var(--gold);transform:translateY(-2px)}
+@media (prefers-reduced-motion:reduce){.gal-card{transition:border-color .2s}}
+.gal-card:hover{border-color:var(--gold)}
+@media (prefers-reduced-motion:no-preference){.gal-card:hover{transform:translateY(-2px)}}
 .gal-card a.glightbox{display:block;cursor:zoom-in;text-decoration:none;position:relative}
+.gal-card a.glightbox:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .gal-thumb{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}
 .gal-placeholder{aspect-ratio:4/3;background:rgba(201,165,92,.05);border-bottom:1px solid var(--line-dark);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
 .gal-placeholder svg{width:100%;height:100%;stroke:var(--gold);fill:none;stroke-width:1;opacity:.85}
