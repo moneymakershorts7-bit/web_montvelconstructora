@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://moneymakershorts7-bit.github.io/web_montvelconstructora/sitemap.xml
