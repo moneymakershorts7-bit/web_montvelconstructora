@@ -1,167 +1,180 @@
 /**
- * ============================================================================
- * GESTIÓN Y VALIDACIÓN DEL FORMULARIO DE CONTACTO (form.js)
- * Proyecto: web_montvelconstructora
- * ============================================================================
- * Este archivo gestiona la validación accesible en tiempo real, estados de carga,
- * trampa honeypot y envío asíncrono vía Fetch API.
+ * form.js — Validación accesible del formulario de contacto
+ * Alineado a index.html: #form-contacto, #nombre, #telefono, #email, #mensaje
  */
+(function () {
+  var form = document.getElementById("form-contacto");
+  if (!form) return;
 
-(function(){
-  // Elementos principales del DOM
-  var form = document.getElementById("form");
-  var status = document.getElementById("status");
-  var btn = document.getElementById("send");
+  var btn = form.querySelector('button[type="submit"]');
+  var status = document.getElementById("form-status");
+  var live = document.getElementById("form-live");
 
-  if (!form || !status || !btn) return;
-
-  // ==========================================================================
-  // 1. INTEGRACIÓN OPCIONAL CON CLOUDFLARE TURNSTILE (Anti-Bots)
-  // ==========================================================================
-  // Si se define TURNSTILE_SITE_KEY en app.js, se inyecta el script oficial de Cloudflare
-  if (typeof TURNSTILE_SITE_KEY !== "undefined" && TURNSTILE_SITE_KEY) {
-    var s = document.createElement("script");
-    s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
-    s.async = true;
-    s.defer = true;
-    s.onload = function(){
-      if (window.turnstile) {
-        window.turnstile.render("#antibot", { sitekey: TURNSTILE_SITE_KEY });
-      }
-    };
-    document.head.appendChild(s);
+  // Crear status y live region si no existen
+  if (!status) {
+    status = document.createElement("div");
+    status.id = "form-status";
+    status.className = "form-status";
+    status.setAttribute("role", "status");
+    status.setAttribute("aria-live", "polite");
+    form.appendChild(status);
+  }
+  if (!live) {
+    live = document.createElement("div");
+    live.id = "form-live";
+    live.className = "sr-only";
+    live.setAttribute("aria-live", "polite");
+    live.setAttribute("aria-atomic", "true");
+    form.appendChild(live);
   }
 
-  // ==========================================================================
-  // 2. REGLAS DE VALIDACIÓN POR CAMPO
-  // ==========================================================================
-  // Cada regla define: id del input, id del mensaje de error, función de prueba y mensaje.
   var rules = [
     {
-      id: "f-nombre",
-      err: "e-nombre",
-      test: function(v){ return v.trim().length >= 2; },
-      msg: "Escribe tu nombre."
+      id: "nombre",
+      test: function (v) { return v.trim().length >= 2; },
+      msg: "Escribe tu nombre (mínimo 2 caracteres)."
     },
     {
-      id: "f-tel",
-      err: "e-tel",
-      test: function(v){
+      id: "telefono",
+      test: function (v) {
         var digits = v.replace(/\D/g, "");
-        return digits.length >= 7 && digits.length <= 15 && /^[\d\s()+\-.]+$/.test(v);
+        return digits.length >= 7 && digits.length <= 15;
       },
-      msg: "Escribe un teléfono válido, solo con números."
+      msg: "Escribe un teléfono válido con código de país (+593…)."
     },
     {
-      id: "f-correo",
-      err: "e-correo",
-      test: function(v){
+      id: "email",
+      optional: true,
+      test: function (v) {
+        if (!v.trim()) return true;
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
       },
       msg: "Escribe un correo válido, por ejemplo nombre@correo.com."
     },
     {
-      id: "f-servicio",
-      err: "e-servicio",
-      test: function(v){ return v !== ""; },
-      msg: "Elige un tipo de servicio."
-    },
-    {
-      id: "f-msg",
-      err: "e-msg",
-      test: function(v){ return v.trim().length >= 10; },
-      msg: "Cuéntanos tu proyecto en al menos 10 caracteres."
+      id: "mensaje",
+      test: function (v) { return v.trim().length >= 10; },
+      msg: "Describe tu proyecto en al menos 10 caracteres."
     }
   ];
 
-  // ==========================================================================
-  // 3. VERIFICACIÓN Y ACCESIBILIDAD ARIA
-  // ==========================================================================
-  function check(r){
-    var el = document.getElementById(r.id);
-    var out = document.getElementById(r.err);
-    if (!el || !out) return true;
+  function ensureErrorEl(fieldId) {
+    var errId = "err-" + fieldId;
+    var existing = document.getElementById(errId);
+    if (existing) return existing;
+    var el = document.getElementById(fieldId);
+    if (!el || !el.parentNode) return null;
+    var span = document.createElement("span");
+    span.id = errId;
+    span.className = "err";
+    span.setAttribute("role", "alert");
+    el.parentNode.appendChild(span);
+    return span;
+  }
 
+  function linkError(el, errId, shown) {
+    var ids = (el.getAttribute("aria-describedby") || "")
+      .split(/\s+/)
+      .filter(function (id) { return id && id !== errId; });
+    if (shown) ids.push(errId);
+    if (ids.length) el.setAttribute("aria-describedby", ids.join(" "));
+    else el.removeAttribute("aria-describedby");
+  }
+
+  function check(r) {
+    var el = document.getElementById(r.id);
+    if (!el) return true;
+    var out = ensureErrorEl(r.id);
     var ok = r.test(el.value);
     el.setAttribute("aria-invalid", ok ? "false" : "true");
-    out.textContent = ok ? "" : r.msg;
+    if (out) {
+      out.textContent = ok ? "" : r.msg;
+      linkError(el, out.id, !ok);
+    }
     return ok;
   }
 
-  // Vincular eventos blur e input para feedback inmediato y no intrusivo
-  rules.forEach(function(r){
-    var el = document.getElementById(r.id);
-    if (!el) return;
+  function announce(msg) {
+    if (!live) return;
+    live.textContent = "";
+    setTimeout(function () { live.textContent = msg; }, 50);
+  }
 
-    el.addEventListener("blur", function(){
-      if (el.value !== "" || el.getAttribute("aria-invalid") === "true") {
-        check(r);
-      }
-    });
-
-    el.addEventListener("input", function(){
-      if (el.getAttribute("aria-invalid") === "true") {
-        check(r);
-      }
-    });
-  });
-
-  // Mostrar mensaje de estado accesible (role="status" o role="alert")
-  function show(type, text){
-    status.className = type;
+  function showStatus(type, text) {
+    status.className = "form-status" + (type ? " " + type : "");
     status.textContent = text;
     status.setAttribute("role", type === "fail" ? "alert" : "status");
   }
 
-  // ==========================================================================
-  // 4. ENVÍO ASÍNCRONO DEL FORMULARIO
-  // ==========================================================================
-  form.addEventListener("submit", function(e){
-    e.preventDefault();
+  rules.forEach(function (r) {
+    var el = document.getElementById(r.id);
+    if (!el) return;
+    el.setAttribute("aria-invalid", "false");
+    ensureErrorEl(r.id);
 
-    // Validar todos los campos antes de enviar
-    var firstBad = null;
-    rules.forEach(function(r){
-      if (!check(r) && !firstBad) {
-        firstBad = document.getElementById(r.id);
+    el.addEventListener("blur", function () {
+      if (el.value !== "" || el.getAttribute("aria-invalid") === "true") {
+        var ok = check(r);
+        if (!ok) announce(r.msg);
       }
     });
+    el.addEventListener("input", function () {
+      if (el.getAttribute("aria-invalid") === "true") check(r);
+    });
+  });
 
-    // Si hay errores, detener y enfocar el primer campo inválido
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    // Honeypot
+    var hp = document.getElementById("website");
+    if (hp && hp.value) return;
+
+    var firstBad = null;
+    rules.forEach(function (r) {
+      if (!check(r) && !firstBad) firstBad = document.getElementById(r.id);
+    });
+
     if (firstBad) {
-      show("fail", "Revisa los campos marcados.");
+      showStatus("fail", "Revisa los campos marcados.");
+      announce("Hay errores en el formulario. Revisa los campos marcados.");
       firstBad.focus();
       return;
     }
 
-    // Indicar estado de envío y bloquear botón para evitar duplicados
-    show("", "Enviando…");
-    btn.disabled = true;
+    showStatus("", "Enviando…");
+    if (btn) btn.disabled = true;
 
-    var endpoint = (typeof FORM_ENDPOINT !== "undefined" && FORM_ENDPOINT) ? FORM_ENDPOINT : "enviar.php";
-    var fd = new FormData(form);
+    var endpoint =
+      typeof FORM_ENDPOINT !== "undefined" && FORM_ENDPOINT
+        ? FORM_ENDPOINT
+        : form.getAttribute("action") || "api/enviar.php";
 
-    fetch(endpoint, {
-      method: "POST",
-      body: fd
-    })
-    .then(function(res){
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      return res.json().catch(function(){ return { ok: true }; });
-    })
-    .then(function(){
-      show("ok", "Mensaje enviado con éxito. Te responderemos pronto.");
-      form.reset();
-      // Reiniciar widget de Turnstile si está activo
-      if (window.turnstile) {
-        try { window.turnstile.reset(); } catch(err){}
-      }
-    })
-    .catch(function(){
-      show("fail", "No pudimos enviar el mensaje. Inténtalo de nuevo o escríbenos por WhatsApp.");
-    })
-    .then(function(){
-      btn.disabled = false;
-    });
+    fetch(endpoint, { method: "POST", body: new FormData(form) })
+      .then(function (res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json().catch(function () { return { ok: true }; });
+      })
+      .then(function () {
+        showStatus("ok", "Mensaje enviado. Te responderemos pronto.");
+        announce("Mensaje enviado con éxito.");
+        form.reset();
+        rules.forEach(function (r) {
+          var el = document.getElementById(r.id);
+          if (el) el.setAttribute("aria-invalid", "false");
+          var err = document.getElementById("err-" + r.id);
+          if (err) err.textContent = "";
+        });
+      })
+      .catch(function () {
+        showStatus(
+          "fail",
+          "No pudimos enviar el mensaje. Inténtalo de nuevo o escríbenos por WhatsApp."
+        );
+        announce("Error al enviar. Usa WhatsApp si el problema continúa.");
+      })
+      .then(function () {
+        if (btn) btn.disabled = false;
+      });
   });
 })();
