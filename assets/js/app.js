@@ -12,7 +12,7 @@
 // ============================================================================
 var COMPANY = {
   name: "Montvel Constructora",          // Nombre de la empresa (se refleja en títulos y pie)
-  city: "Ciudad de México",              // Ciudad o región operativa
+  city: "Quito",                         // Ciudad o región operativa
   whatsapp: "5215500000000",             // Número de WhatsApp (código de país sin signo +)
   email: "contacto@montvelconstructora.com", // Correo electrónico de atención al cliente
   years: "15",                           // Años de experiencia en el sector
