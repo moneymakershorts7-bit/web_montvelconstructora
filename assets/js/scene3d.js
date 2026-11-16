@@ -1,12 +1,12 @@
 /**
  * ============================================================================
- * scene3d.js — Animación WebGL 3D para Montvel Constructora (v3)
+ * scene3d.js — Animación WebGL 3D para Montvel Constructora (v3.1 — catedral más larga)
  * ============================================================================
  *
  * Animación ligada al SCROLL:
- *   1. PLANO (hero)     → se traza y las paredes se levantan
- *   2. EDIFICIO         → los pisos se construyen de abajo hacia arriba
- *   3. RACK SELECTIVO   → columnas y travesaños se levantan nivel a nivel
+ *   1. PLANO (hero)     → se traza y las paredes se levantan (más lento)
+ *   2. EDIFICIO         → los pisos se construyen de abajo hacia arriba (más lento)
+ *   3. RACK SELECTIVO   → columnas y travesaños se levantan rápido al entrar a #racks
  *
  * Inspiración:
  *   - Planta cruz latina (Basílica del Voto Nacional, Quito)
@@ -20,7 +20,7 @@
 
   var GOLD    = 0xE8C877;
   var GOLD_DK = 0xB38A32;
-  var INTRO_DURATION_MS = 2200;
+  var INTRO_DURATION_MS = 4200;
 
   var canvas = document.getElementById('bg3d');
   if (!canvas) return;
@@ -445,17 +445,15 @@
     var docH = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
     tgt.scroll = clamp(scrollY / docH, 0, 1);
 
-    // Plano se traza al inicio; paredes se levantan un poco después
-    // Edificio crece en la zona media del scroll
-    // Rack se construye al llegar a la sección #racks
+    // Plano + edificio ocupan más scroll; rack se arma rápido al entrar a #racks
     var racksEl = document.getElementById('racks');
     if (racksEl) {
       var rect = racksEl.getBoundingClientRect();
       var vh = window.innerHeight;
-      // progress 0→1 mientras la sección entra y se centra
-      var progress = clamp(1 - (rect.top - vh * 0.2) / (vh * 0.75), 0, 1);
+      // Rango más corto → el rack termina de armarse más rápido
+      var progress = clamp(1 - (rect.top - vh * 0.05) / (vh * 0.45), 0, 1);
       tgt.rack = progress;
-      tgt.rackFocus = smooth(clamp((progress - 0.12) / 0.55, 0, 1));
+      tgt.rackFocus = smooth(clamp((progress - 0.05) / 0.35, 0, 1));
     } else {
       tgt.rack = 0;
       tgt.rackFocus = 0;
@@ -472,12 +470,10 @@
 
     var elapsed = reduceMotion ? 1 : clamp((performance.now() - t0) / INTRO_DURATION_MS, 0, 1);
 
-    // —— PLANO: trazo + paredes que se levantan ——
-    // Intro dibuja el plano; el scroll temprano completa y levanta muros
-    var planDraw = reduceMotion ? 1 : Math.max(elapsed, clamp(tgt.scroll / 0.10, 0, 1));
+    // —— PLANO / CATEDRAL: más lento (más % de scroll) ——
+    var planDraw = reduceMotion ? 1 : Math.max(elapsed, clamp(tgt.scroll / 0.28, 0, 1));
     tgt.plan = planDraw;
-    // Paredes verticales se levantan un poco después del trazo
-    tgt.walls = reduceMotion ? 1 : clamp((tgt.scroll - 0.02) / 0.18, 0, 1);
+    tgt.walls = reduceMotion ? 1 : clamp((tgt.scroll - 0.04) / 0.32, 0, 1);
 
     var pn = Math.floor(cur.plan * totalPlanVerts);
     if (pn % 2 === 1) pn -= 1;
@@ -500,25 +496,22 @@
       });
     });
 
-    // —— EDIFICIO: pisos se levantan del suelo ——
-    tgt.bld = reduceMotion ? 1 : clamp((tgt.scroll - 0.05) / 0.40, 0, 1);
+    // —— EDIFICIO: más lento (hasta ~66% del scroll de la página) ——
+    tgt.bld = reduceMotion ? 1 : clamp((tgt.scroll - 0.08) / 0.58, 0, 1);
 
     floorGroups.forEach(function (fg, idx) {
       var t = clamp(cur.bld * (floorGroups.length + 0.5) - idx, 0, 1);
       t = smooth(t);
       fg.visible = t > 0.01;
       fg.scale.y = Math.max(t, 0.001);
-      // Sube desde bajo tierra hasta su altura final
       fg.position.y = lerp(-2.2, fg.userData.targetY, t);
     });
     mast.visible = cur.bld > 0.96;
     if (mast.material) mast.material.opacity = clamp((cur.bld - 0.96) / 0.04, 0, 1);
 
-    // —— RACK: piezas se levantan de abajo hacia arriba ——
-    // cur.rack ya viene de la sección #racks
+    // —— RACK: más rápido (factor 0.28) ——
     rackPieces.forEach(function (p, idx) {
-      // Construye en orden (columnas primero, luego niveles)
-      var t = clamp(cur.rack * (rackPieces.length * 0.55) - idx * 0.55, 0, 1);
+      var t = clamp(cur.rack * (rackPieces.length * 0.28) - idx * 0.28, 0, 1);
       t = smooth(t);
       p.visible = t > 0.01;
       p.scale.y = Math.max(t, 0.001);
