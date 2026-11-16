@@ -9,16 +9,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <!-- Fallback local para tipografía si Google Fonts no está disponible -->
     <noscript><link rel="stylesheet" href="assets/vendor/fonts/fonts.css"></noscript>
     <link rel="stylesheet" href="assets/css/styles.css">
 
-    <!--
-      GLightbox — galería lightbox ultraligera (~14KB CSS + 56KB JS, sin dependencias).
-      Es la opción gratuita más rápida disponible (supera a Fancybox, Magnific, etc.).
-      CDN primario: jsDelivr; fallback local en assets/vendor/glightbox/.
-      Docs: https://biati-digital.github.io/glightbox/
-    -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox@3.3.0/dist/css/glightbox.min.css">
     <noscript><link rel="stylesheet" href="assets/vendor/glightbox/glightbox.min.css"></noscript>
 </head>
@@ -28,16 +21,6 @@
 <header class="top">
   <div class="wrap">
     <a class="logo" href="#inicio" aria-label="Montvel Constructora — ir al inicio">
-      <!--
-        LOGO EN LA BARRA DE NAVEGACIÓN
-        ════════════════════════════════════════════════════════════════
-        Para colocar tu logo real:
-          1. Reemplaza assets/images/logo.svg con tu propio archivo SVG o PNG.
-          2. El <img> carga el logo automáticamente. No toques el <span> de fallback.
-          3. Dimensiones óptimas: ancho libre, alto máximo 44px (la nav mide 72px).
-          4. Formato recomendado: SVG (escala infinita) o PNG-24 con transparencia.
-        ════════════════════════════════════════════════════════════════
-      -->
       <img src="assets/images/logo.svg"
            alt="Montvel Constructora"
            class="logo-img"
@@ -141,53 +124,24 @@
       </div>
 
       <!--
-        ════════════════════════════════════════════════════════════════════
-        GALERÍA DE PROYECTOS — GLightbox
-        ════════════════════════════════════════════════════════════════════
-        CÓMO AGREGAR O EDITAR UN PROYECTO:
-
-        Cada <article class="gal-card"> representa una foto de proyecto.
-        Atributos de <a class="glightbox"> que debes conocer:
-
-          href="..."          → Ruta a la imagen GRANDE (lightbox la abre a pantalla completa).
-                                Coloca tus fotos en assets/images/proyectos/
-                                Ej: assets/images/proyectos/casa-norte-full.jpg
-
-          data-title="..."    → Título que aparece debajo de la imagen en el lightbox.
-          data-description="..."→ Descripción larga (HTML permitido dentro, usa &amp;, etc.).
-          data-gallery="proy" → Todas las fotos con el mismo valor forman una galería
-                                conectada (flechas prev/next). No cambiar este valor.
-
-        La imagen del thumbnail (<img src="...">) puede ser una versión más
-        pequeña/comprimida de la misma foto para carga rápida.
-
-        TAMAÑOS RECOMENDADOS:
-          Thumbnail: 640×480 px, JPEG calidad 75–80, < 80 KB
-          Full (lightbox): 1920×1440 px, JPEG calidad 85, < 400 KB
-
-        PARA AGREGAR UN PROYECTO NUEVO: duplica uno de los <article> de abajo.
-        ════════════════════════════════════════════════════════════════════
+        GALERÍA — Imágenes royalty-free de Unsplash (licencia libre para uso comercial).
+        Para producción definitiva se recomienda descargarlas a assets/images/proyectos/
+        y cambiar las URLs a rutas locales.
       -->
       <div class="gal-grid">
 
-        <!-- ── Proyecto 1 ─────────────────────────────────────────── -->
+        <!-- ── Proyecto 1: Casa de dos niveles ─────────────────────── -->
         <article class="gal-card">
           <a class="glightbox"
-             href="assets/images/proyectos/p1-full.jpg"
+             href="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1600&h=1200&fit=crop&q=85&auto=format"
              data-gallery="proy"
              data-title="Casa de dos niveles — Obra nueva"
              data-description="Construcción desde cero: excavación, estructura de hormigón armado, acabados y entrega de llaves. <strong>Ciudad, 2024.</strong>">
-            <!--
-              Reemplaza este SVG placeholder con una etiqueta <img> apuntando
-              a tu foto real. Ejemplo:
-              <img src="assets/images/proyectos/p1-thumb.jpg"
-                   alt="Casa de dos niveles, obra nueva 2024"
-                   class="gal-thumb" width="640" height="480" loading="lazy">
-            -->
-            <div class="gal-thumb gal-placeholder" aria-hidden="true">
-              <svg viewBox="0 0 320 240" aria-hidden="true"><path d="M40 200h240M70 200v-90h120v90M190 200v-60h60v60M60 110l70-40 70 40M90 200v-40h30v40M150 130h20v20h-20z"/></svg>
-              <span class="gal-ph-label">Foto del proyecto 1</span>
-            </div>
+            <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=640&h=480&fit=crop&q=80&auto=format"
+                 alt="Casa de dos niveles, obra nueva"
+                 class="gal-thumb"
+                 width="640" height="480"
+                 loading="lazy">
           </a>
           <div class="gal-info">
             <h3>Casa de dos niveles</h3>
@@ -195,17 +149,18 @@
           </div>
         </article>
 
-        <!-- ── Proyecto 2 ─────────────────────────────────────────── -->
+        <!-- ── Proyecto 2: Remodelación de local ───────────────────── -->
         <article class="gal-card">
           <a class="glightbox"
-             href="assets/images/proyectos/p2-full.jpg"
+             href="https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1600&h=1200&fit=crop&q=85&auto=format"
              data-gallery="proy"
              data-title="Remodelación de local comercial"
              data-description="Reforma completa de cocina industrial, instalaciones y fachada con obra limpia y plazo cumplido. <strong>Ciudad, 2023.</strong>">
-            <div class="gal-thumb gal-placeholder" aria-hidden="true">
-              <svg viewBox="0 0 320 240" aria-hidden="true"><path d="M40 200h240M40 60h240v140M60 120h200M60 160h200M100 60v60M160 60v60M220 60v60M90 100h20M150 100h20M210 100h20"/></svg>
-              <span class="gal-ph-label">Foto del proyecto 2</span>
-            </div>
+            <img src="https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=640&h=480&fit=crop&q=80&auto=format"
+                 alt="Remodelación de local comercial"
+                 class="gal-thumb"
+                 width="640" height="480"
+                 loading="lazy">
           </a>
           <div class="gal-info">
             <h3>Remodelación de local</h3>
@@ -213,17 +168,18 @@
           </div>
         </article>
 
-        <!-- ── Proyecto 3 ─────────────────────────────────────────── -->
+        <!-- ── Proyecto 3: Ampliación de planta alta ───────────────── -->
         <article class="gal-card">
           <a class="glightbox"
-             href="assets/images/proyectos/p3-full.jpg"
+             href="https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=1600&h=1200&fit=crop&q=85&auto=format"
              data-gallery="proy"
              data-title="Ampliación de planta alta"
              data-description="Ampliación estructural de segundo piso con viga de hormigón armado, losa y cubierta. <strong>Ciudad, 2022.</strong>">
-            <div class="gal-thumb gal-placeholder" aria-hidden="true">
-              <svg viewBox="0 0 320 240" aria-hidden="true"><path d="M40 200h240M60 200V90h100v110M160 200V50h100v150M60 130h100M160 90h100M160 130h100M160 170h100M110 90V50h50"/></svg>
-              <span class="gal-ph-label">Foto del proyecto 3</span>
-            </div>
+            <img src="https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=640&h=480&fit=crop&q=80&auto=format"
+                 alt="Ampliación de planta alta en construcción"
+                 class="gal-thumb"
+                 width="640" height="480"
+                 loading="lazy">
           </a>
           <div class="gal-info">
             <h3>Ampliación de planta alta</h3>
@@ -231,35 +187,18 @@
           </div>
         </article>
 
-        <!-- ── Proyecto 4 ─────────────────────────────────────────── -->
+        <!-- ── Proyecto 4: Rack selectivo ──────────────────────────── -->
         <article class="gal-card">
           <a class="glightbox"
-             href="assets/images/proyectos/p4-full.jpg"
+             href="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1600&h=1200&fit=crop&q=85&auto=format"
              data-gallery="proy"
              data-title="Rack selectivo para almacén — 3 bahías"
              data-description="Fabricación e instalación de rack selectivo de 3 bahías × 1.8 m ancho × 4.4 m alto, con 5 niveles de carga. Calculado para zona sísmica NEC. <strong>Ciudad, 2024.</strong>">
-            <div class="gal-thumb gal-placeholder" aria-hidden="true">
-              <svg viewBox="0 0 320 240" aria-hidden="true">
-                <!-- Rack esquemático: 3 columnas, 5 niveles -->
-                <line x1="60" y1="30"  x2="60"  y2="210"/>
-                <line x1="140" y1="30" x2="140" y2="210"/>
-                <line x1="220" y1="30" x2="220" y2="210"/>
-                <line x1="300" y1="30" x2="300" y2="210"/>
-                <line x1="55"  y1="210" x2="305" y2="210"/>
-                <line x1="55"  y1="30"  x2="305" y2="30"/>
-                <line x1="55"  y1="66"  x2="305" y2="66"/>
-                <line x1="55"  y1="102" x2="305" y2="102"/>
-                <line x1="55"  y1="138" x2="305" y2="138"/>
-                <line x1="55"  y1="174" x2="305" y2="174"/>
-                <!-- Pallets en estantes alternos -->
-                <rect x="62" y="68" width="76" height="32" stroke-width=".8"/>
-                <rect x="142" y="104" width="76" height="32" stroke-width=".8"/>
-                <rect x="222" y="68" width="76" height="32" stroke-width=".8"/>
-                <rect x="62" y="140" width="76" height="32" stroke-width=".8"/>
-                <rect x="142" y="176" width="76" height="32" stroke-width=".8"/>
-              </svg>
-              <span class="gal-ph-label">Foto del proyecto 4</span>
-            </div>
+            <img src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=640&h=480&fit=crop&q=80&auto=format"
+                 alt="Rack selectivo para almacén"
+                 class="gal-thumb"
+                 width="640" height="480"
+                 loading="lazy">
           </a>
           <div class="gal-info">
             <h3>Rack selectivo — 3 bahías</h3>
@@ -267,19 +206,18 @@
           </div>
         </article>
 
-        <!-- ── Proyecto 5 ─────────────────────────────────────────── -->
+        <!-- ── Proyecto 5: Bodega industrial ───────────────────────── -->
         <article class="gal-card">
           <a class="glightbox"
-             href="assets/images/proyectos/p5-full.jpg"
+             href="https://images.unsplash.com/photo-1553413077-190dd305871c?w=1600&h=1200&fit=crop&q=85&auto=format"
              data-gallery="proy"
              data-title="Bodega industrial — Obra nueva"
              data-description="Construcción de bodega de 800 m² con estructura metálica, cubierta de zinc y piso de hormigón reforzado. <strong>Ciudad, 2023.</strong>">
-            <div class="gal-thumb gal-placeholder" aria-hidden="true">
-              <svg viewBox="0 0 320 240" aria-hidden="true">
-                <path d="M30 200h260M30 200V120h260v80M30 120l130-70 130 70M120 200v-60h80v60M110 160h20M190 160h20"/>
-              </svg>
-              <span class="gal-ph-label">Foto del proyecto 5</span>
-            </div>
+            <img src="https://images.unsplash.com/photo-1553413077-190dd305871c?w=640&h=480&fit=crop&q=80&auto=format"
+                 alt="Bodega industrial"
+                 class="gal-thumb"
+                 width="640" height="480"
+                 loading="lazy">
           </a>
           <div class="gal-info">
             <h3>Bodega industrial</h3>
@@ -287,20 +225,18 @@
           </div>
         </article>
 
-        <!-- ── Proyecto 6 ─────────────────────────────────────────── -->
+        <!-- ── Proyecto 6: Reparación estructural ──────────────────── -->
         <article class="gal-card">
           <a class="glightbox"
-             href="assets/images/proyectos/p6-full.jpg"
+             href="https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1600&h=1200&fit=crop&q=85&auto=format"
              data-gallery="proy"
              data-title="Reparación estructural — Grietas y humedades"
              data-description="Diagnóstico y reparación de fisuras estructurales, impermeabilización de cubierta y saneamiento de humedades en paredes. <strong>Ciudad, 2022.</strong>">
-            <div class="gal-thumb gal-placeholder" aria-hidden="true">
-              <svg viewBox="0 0 320 240" aria-hidden="true">
-                <path d="M50 190h220M50 190V70h220v120M50 70h220M140 70v120M50 130h220M110 100h20M190 100h20M110 160h20M190 160h20"/>
-                <path d="M160 70l-8 25 12 20-10 25 8 30" stroke-width="1.5" opacity=".7"/>
-              </svg>
-              <span class="gal-ph-label">Foto del proyecto 6</span>
-            </div>
+            <img src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=640&h=480&fit=crop&q=80&auto=format"
+                 alt="Reparación estructural en obra"
+                 class="gal-thumb"
+                 width="640" height="480"
+                 loading="lazy">
           </a>
           <div class="gal-info">
             <h3>Reparación estructural</h3>
@@ -329,191 +265,60 @@
         <h2 id="t-cont">Pide tu presupuesto</h2>
         <p class="lead">Cuéntanos qué quieres construir. Te respondemos para coordinar la visita.</p>
         <div class="alt">
-          <a class="btn btn-gold" data-wa="Hola, quiero pedir un presupuesto." href="#contacto" target="_blank" rel="noopener">Escribir por WhatsApp</a>
-          <a class="mail" data-mail href="#contacto"><span data-c="email">[CORREO]</span></a>
+          <p><strong>WhatsApp</strong><br>
+            <a data-wa="Hola, quiero pedir un presupuesto." href="#contacto" target="_blank" rel="noopener">Escribir ahora</a>
+          </p>
+          <p><strong>Email</strong><br>
+            <a href="mailto:contacto@montvelconstructora.com">contacto@montvelconstructora.com</a>
+          </p>
         </div>
       </div>
-
-      <form id="form" novalidate>
+      <form class="contact-form" id="form-contacto" action="api/enviar.php" method="post" novalidate>
         <div class="field">
-          <label for="f-nombre">Nombre</label>
-          <input id="f-nombre" name="nombre" type="text" autocomplete="name" required aria-describedby="e-nombre">
-          <span class="err" id="e-nombre"></span>
+          <label for="nombre">Nombre</label>
+          <input type="text" id="nombre" name="nombre" required autocomplete="name" placeholder="Tu nombre">
         </div>
         <div class="field">
-          <label for="f-tel">Teléfono</label>
-          <input id="f-tel" name="telefono" type="tel" inputmode="tel" autocomplete="tel" required aria-describedby="e-tel">
-          <span class="err" id="e-tel"></span>
+          <label for="telefono">Teléfono / WhatsApp</label>
+          <input type="tel" id="telefono" name="telefono" required autocomplete="tel" placeholder="+593 ...">
         </div>
         <div class="field">
-          <label for="f-correo">Correo</label>
-          <input id="f-correo" name="correo" type="email" autocomplete="email" required aria-describedby="e-correo">
-          <span class="err" id="e-correo"></span>
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" autocomplete="email" placeholder="opcional">
         </div>
         <div class="field">
-          <label for="f-servicio">Tipo de servicio</label>
-          <select id="f-servicio" name="servicio" required aria-describedby="e-servicio">
-            <option value="">Elige una opción</option>
-            <option value="obra">Obra nueva</option>
-            <option value="remodelacion">Remodelación</option>
-            <option value="racks">Racks</option>
-            <option value="otro">Otro</option>
-          </select>
-          <span class="err" id="e-servicio"></span>
+          <label for="mensaje">¿Qué necesitas?</label>
+          <textarea id="mensaje" name="mensaje" rows="4" required placeholder="Obra nueva, racks, remodelación..."></textarea>
         </div>
-        <div class="field">
-          <label for="f-msg">Mensaje</label>
-          <textarea id="f-msg" name="mensaje" required aria-describedby="e-msg"></textarea>
-          <span class="err" id="e-msg"></span>
+        <div class="hp" aria-hidden="true">
+          <label for="website">Website</label>
+          <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
         </div>
-
-        <!-- Campo trampa para bots: no lo muestres ni lo quites. -->
-        <div class="hp" aria-hidden="true"><label>No rellenar<input type="text" name="web" tabindex="-1" autocomplete="off"></label></div>
-
-        <!-- VERIFICACIÓN ANTI-BOTS: aquí se dibuja el widget de Cloudflare Turnstile
-             cuando TURNSTILE_SITE_KEY tiene valor (ver script).
-             Para reCAPTCHA v3: carga su script con tu clave y añade el token
-             al FormData con fd.append('recaptcha', token) antes del fetch. -->
-        <div id="antibot"></div>
-
-        <div class="form-actions">
-          <button class="btn btn-gold" type="submit" id="send">Enviar mensaje</button>
-        </div>
-        <div id="status" role="status" aria-live="polite"></div>
+        <button type="submit" class="btn btn-gold">Enviar solicitud</button>
+        <p class="form-note">Te respondemos en menos de 24 h hábiles.</p>
       </form>
     </div>
   </section>
+
 </main>
 
 <footer class="foot">
   <div class="wrap">
-    <div class="cols">
-      <div>
-        <!--
-          LOGO EN EL FOOTER
-          ══════════════════════════════════════════════════════
-          Mismo archivo que en la nav (assets/images/logo.svg).
-          Se muestra más pequeño: height:36px.
-          Si tu logo se ve mal a ese tamaño, crea un archivo
-          separado assets/images/logo-footer.svg (versión simple).
-          ══════════════════════════════════════════════════════
-        -->
-        <a href="#inicio" class="foot-logo" aria-label="Montvel Constructora — ir al inicio">
-          <img src="assets/images/logo.svg"
-               alt="Montvel Constructora"
-               class="logo-img-footer"
-               width="160" height="36"
-               onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">
-          <span style="display:none" data-c="name">[NOMBRE DE LA CONSTRUCTORA]</span>
-        </a>
-        <p>Obra nueva, remodelaciones, ampliaciones y racks en <span data-c="city">[CIUDAD]</span>.</p>
-      </div>
-      <div>
-        <h4>Enlaces</h4>
-        <ul>
-          <li><a href="#servicios">Servicios</a></li>
-          <li><a href="#racks">Racks</a></li>
-          <li><a href="#proceso">Proceso</a></li>
-          <li><a href="#contacto">Contacto</a></li>
-        </ul>
-      </div>
-      <div>
-        <h4>Contacto</h4>
-        <ul>
-          <li><a data-wa="Hola, quiero pedir un presupuesto." href="#contacto" target="_blank" rel="noopener">WhatsApp</a></li>
-          <li><a data-mail href="#contacto"><span data-c="email">[CORREO]</span></a></li>
-        </ul>
-      </div>
-    </div>
-    <p class="copy">© <span id="year">2026</span> <span data-c="name">[NOMBRE DE LA CONSTRUCTORA]</span>. Todos los derechos reservados.</p>
+    <p>&copy; <span id="year"></span> <span data-c="name">Montvel Constructora</span>. Todos los derechos reservados.</p>
   </div>
 </footer>
 
-<a class="wa" data-wa="Hola, quiero pedir un presupuesto." href="#contacto" target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
-  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.5 0-3-.4-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.200 8.200 0 1 1 12 20.200zm4.500-6.100c-.2-.1-1.500-.7-1.700-.8-.2-.1-.4-.1-.6.100l-.8 1c-.1.200-.3.200-.5.100-1.500-.7-2.500-1.300-3.400-2.900-.3-.4.300-.4.800-1.400.1-.2 0-.3 0-.5l-.8-1.800c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.100-.7.300-.7.700-1 1.500-1 2.400.1 1 .5 2 1.100 2.800 1.300 1.700 3 3 5 3.700 1.500.5 2.200.5 3 .4.600-.1 1.700-.7 1.900-1.400.2-.7.200-1.200.2-1.400-.1-.1-.3-.2-.5-.3z"/></svg>
-  <span>WhatsApp</span>
-</a>
-
-    <!--
-      =========================================================
-      CARGA DE SCRIPTS — ORDEN OBLIGATORIO:
-      1. app.js         → utilidades generales (sin Three.js)
-      2. three.min.js   → motor 3D (CDN con fallback local)
-      3. scene3d.js     → animación WebGL (depende de THREE)
-      4. form.js        → validación del formulario de contacto
-      =========================================================
-      IMPORTANTE PARA DESARROLLADORES:
-      - NO reordenar estos scripts. scene3d.js REQUIERE que THREE
-        esté disponible globalmente antes de ejecutarse.
-      - El fallback local carga assets/vendor/three/three.min.js
-        si el CDN no está disponible (p.ej. sin internet).
-      - En desarrollo local, usa http://localhost:8080 (nunca file://)
-        porque WebGL falla en el protocolo file:// por restricciones
-        de seguridad del navegador.
-    -->
-    <script src="assets/js/app.js"></script>
-
-    <!-- Three.js r128 — primero CDN, si falla carga la copia local -->
-    <script>
-      (function() {
-        // Intentar cargar Three.js desde CDN; si falla en 3s, usar local
-        var cdnScript = document.createElement('script');
-        cdnScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
-        cdnScript.onerror = function() {
-          // CDN no disponible → fallback al archivo local
-          var localScript = document.createElement('script');
-          localScript.src = 'assets/vendor/three/three.min.js';
-          localScript.onload = loadScene;
-          document.head.appendChild(localScript);
-        };
-        cdnScript.onload = loadScene;
-        document.head.appendChild(cdnScript);
-
-        function loadScene() {
-          // Cargar scene3d.js SOLO después de que THREE esté listo
-          var s = document.createElement('script');
-          s.src = 'assets/js/scene3d.js';
-          document.body.appendChild(s);
-        }
-      })();
-    </script>
-
-    <!--
-      ════════════════════════════════════════════════════════════════
-      GLightbox — inicialización de la galería de proyectos
-      CDN primario + fallback local garantizan funcionamiento offline.
-      ════════════════════════════════════════════════════════════════
-    -->
-    <script>
-      (function() {
-        function initGLightbox() {
-          if (typeof GLightbox === 'undefined') return;
-          GLightbox({
-            selector: '.glightbox',
-            touchNavigation: true,
-            loop: true,
-            autoplayVideos: true,
-            openEffect: 'zoom',
-            closeEffect: 'fade',
-            keyboardNavigation: true,
-            closeButton: true,
-            moreLength: 0
-          });
-        }
-
-        var glScript = document.createElement('script');
-        glScript.src = 'https://cdn.jsdelivr.net/npm/glightbox@3.3.0/dist/js/glightbox.min.js';
-        glScript.onload = initGLightbox;
-        glScript.onerror = function() {
-          var local = document.createElement('script');
-          local.src = 'assets/vendor/glightbox/glightbox.min.js';
-          local.onload = initGLightbox;
-          document.body.appendChild(local);
-        };
-        document.body.appendChild(glScript);
-      })();
-    </script>
-
-    <script src="assets/js/form.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="assets/vendor/three/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/glightbox@3.3.0/dist/js/glightbox.min.js"></script>
+<script src="assets/js/app.js"></script>
+<script src="assets/js/scene3d.js"></script>
+<script src="assets/js/form.js"></script>
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+  if (typeof GLightbox !== 'undefined') {
+    GLightbox({ selector: '.glightbox', touchNavigation: true, loop: true });
+  }
+</script>
 </body>
 </html>
