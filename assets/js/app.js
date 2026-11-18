@@ -4,15 +4,14 @@
 var COMPANY = {
   name: "Montvel Constructora",
   city: "Quito",
+  // ⚠️ REEMPLAZAR por el número real, solo dígitos con código de país.
+  // Ecuador = 593 y sin el 0 inicial. Ejemplo: 593991234567
   whatsapp: "5215500000000",
   email: "contacto@montvelconstructora.com",
   years: "15",
   projects: "120",
   clients: "95"
 };
-
-var TURNSTILE_SITE_KEY = "";
-var FORM_ENDPOINT = "api/enviar.php";
 
 (function () {
   document.querySelectorAll("[data-c]").forEach(function (el) {
@@ -27,6 +26,7 @@ var FORM_ENDPOINT = "api/enviar.php";
       COMPANY.name + " | Obra nueva, remodelaciones y racks en " + COMPANY.city;
   }
 
+  // Botones / enlaces de WhatsApp
   document.querySelectorAll("[data-wa]").forEach(function (a) {
     var msg = a.getAttribute("data-wa") || "Hola, quiero pedir un presupuesto.";
     a.href =
@@ -42,8 +42,18 @@ var FORM_ENDPOINT = "api/enviar.php";
     }
   });
 
+  // Número de WhatsApp visible (+código país…)
+  document.querySelectorAll("[data-wa-number]").forEach(function (el) {
+    el.textContent = "+" + COMPANY.whatsapp;
+  });
+
+  // Botones / enlaces de correo (asunto opcional con data-mail="Asunto")
   document.querySelectorAll("[data-mail]").forEach(function (a) {
-    a.href = "mailto:" + COMPANY.email;
+    var subject = a.getAttribute("data-mail");
+    a.href =
+      "mailto:" +
+      COMPANY.email +
+      (subject ? "?subject=" + encodeURIComponent(subject) : "");
   });
 
   var yearEl = document.getElementById("year");
