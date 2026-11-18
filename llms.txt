@@ -1,0 +1,58 @@
+# Montvel Constructora
+
+> Constructora en Quito, Ecuador. Obra nueva, remodelaciones, ampliaciones y racks selectivos a medida para bodegas. Presupuesto por WhatsApp o correo.
+
+Sitio: https://moneymakershorts7-bit.github.io/web_montvelconstructora/  
+Idioma: español (Ecuador) · Zona: Quito y valle de Pichincha
+
+## Contacto
+
+- Email: contacto@montvelconstructora.com
+- WhatsApp: configurar en `assets/js/app.js` (COMPANY.whatsapp, código país 593)
+- Ubicación: Quito, Pichincha, Ecuador
+- Respuesta habitual: menos de 24 horas hábiles
+- No hay formulario web de envío: solo WhatsApp y mailto
+
+## Secciones de la página (SPA / anclas)
+
+| Ancla | Contenido |
+|-------|-----------|
+| `#inicio` | Hero: propuesta de valor y CTAs presupuesto / WhatsApp |
+| `#servicios` | Obra nueva, remodelaciones, ampliaciones, reparaciones |
+| `#racks` | Racks selectivos a medida; cálculo sísmico NEC |
+| `#proceso` | Consulta → visita → presupuesto escrito → ejecución |
+| `#obras` | Galería de proyectos (obra, remodelación, racks, bodega) |
+| `#faq` | Zonas de atención, cómo pedir presupuesto, racks |
+| `#contacto` | Tarjetas WhatsApp, correo y ubicación |
+
+## Servicios
+
+1. **Obra nueva** — casas y locales desde excavación hasta entrega de llaves (zona sísmica).
+2. **Remodelaciones** — cocinas, baños, fachadas, reformas con obra limpia.
+3. **Ampliaciones** — metros adicionales o planta alta.
+4. **Reparaciones** — humedades, grietas, cubiertas, instalaciones.
+5. **Racks para bodega** — diseño, fabricación e instalación a medida; normativa NEC.
+
+## Trayectoria (cifras en sitio)
+
+- 15 años de experiencia
+- 120 proyectos terminados
+- 95 clientes atendidos
+
+## Recursos técnicos útiles para agentes
+
+- `AGENTS.md` — reglas de producto, skills y checklist
+- `assets/js/app.js` — datos COMPANY (nombre, ciudad, WhatsApp, email)
+- `assets/js/scene3d.js` — animación Three.js r128 (catedral + racks con scroll)
+- `assets/css/styles.css` — design tokens y layout
+- `assets/images/proyectos/` — imágenes de galería (rutas relativas)
+
+## Preferencias de usuario / negocio
+
+- Contacto preferido: WhatsApp
+- Ciudad fija en copy y SEO: **Quito**
+- Animación 3D de fondo orientada a planos y construcción (no es el mensaje principal de negocio)
+
+## Actualización de este archivo
+
+`llms.txt` debe actualizarse **cada vez** que cambie el contenido público de la página (servicios, contacto, cifras, secciones, URLs o mensajes de negocio). Ver regla en `AGENTS.md`.

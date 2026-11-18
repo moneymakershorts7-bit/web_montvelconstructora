@@ -35,6 +35,7 @@ En el workspace Grok también existe `AGENTS.project.md` (misma prioridad que es
 
 ```text
 index.html                 # #inicio #servicios #racks #proceso #obras #faq #contacto
+llms.txt                   # resumen Markdown del sitio para LLMs (mantener al día)
 assets/css/styles.css      # tokens, hero sticky 320vh, .contact-cards, .wa flotante
 assets/js/app.js           # COMPANY, data-c / data-wa / data-mail / data-wa-number, menú
 assets/js/scene3d.js       # catedral + racks (scroll 0→1)
@@ -44,6 +45,17 @@ assets/images/proyectos/   # p1–p6 full + thumb
 
 - `form.js` / `api/enviar.php`: **deprecados** para el flujo de contacto actual. No volver a cablear el formulario en `index.html`.
 - Contacto = tarjetas WhatsApp + correo + ubicación + botón flotante `.wa`.
+
+---
+
+## llms.txt (obligatorio mantener)
+
+Archivo en la raíz: `llms.txt`.
+
+- Resume el sitio en Markdown legible para LLMs (qué es, secciones, contacto, servicios).
+- **Actualizar `llms.txt` en el mismo cambio** siempre que se modifique **contenido público** de la página: textos de servicios, contacto, cifras, FAQ, URLs, anclas o mensaje de negocio.
+- No hace falta tocarlo por cambios solo de CSS, animación 3D o JS interno sin impacto en el mensaje al visitante.
+- Opcional: `llms-full.txt` solo si se pide documentación más extensa.
 
 ---
 
@@ -57,6 +69,7 @@ assets/images/proyectos/   # p1–p6 full + thumb
 6. **Estilo:** `--black #0B0B0B`, `--paper #F5F4F0`, gold gradient en CTAs. Sin Tailwind/Bootstrap.
 7. **a11y:** skip link, landmarks, focus-visible, menú `aria-expanded`, `lang="es-EC"`.
 8. **SEO:** title/description Quito, OG, JSON-LD `GeneralContractor`.
+9. **llms.txt** al día cuando cambie el contenido público (ver sección anterior).
 
 ---
 
@@ -86,6 +99,7 @@ Selectores: `[data-c]`, `[data-wa]`, `[data-mail]`, `[data-wa-number]`.
 - [ ] Menú móvil: Escape + aria-expanded
 - [ ] Sin reintroducir formulario de contacto
 - [ ] Diff quirúrgico (karpathy)
+- [ ] Si cambió contenido público → actualizar `llms.txt`
 
 ---
 
