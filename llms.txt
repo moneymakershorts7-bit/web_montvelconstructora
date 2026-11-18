@@ -2,57 +2,25 @@
 
 > Constructora en Quito, Ecuador. Obra nueva, remodelaciones, ampliaciones y racks selectivos a medida para bodegas. Presupuesto por WhatsApp o correo.
 
-Sitio: https://moneymakershorts7-bit.github.io/web_montvelconstructora/  
-Idioma: español (Ecuador) · Zona: Quito y valle de Pichincha
+Zona de atención: Quito y el valle de Pichincha. Contacto preferido: WhatsApp. No hay formulario web de envío (solo WhatsApp y mailto). Email: contacto@montvelconstructora.com. Ciudad fija en copy y SEO: Quito.
 
-## Contacto
+## Páginas y secciones
 
-- Email: contacto@montvelconstructora.com
-- WhatsApp: configurar en `assets/js/app.js` (COMPANY.whatsapp, código país 593)
-- Ubicación: Quito, Pichincha, Ecuador
-- Respuesta habitual: menos de 24 horas hábiles
-- No hay formulario web de envío: solo WhatsApp y mailto
+- [Inicio (hero)](https://moneymakershorts7-bit.github.io/web_montvelconstructora/#inicio): Propuesta de valor y CTAs de presupuesto
+- [Servicios](https://moneymakershorts7-bit.github.io/web_montvelconstructora/#servicios): Obra nueva, remodelaciones, ampliaciones y reparaciones
+- [Racks](https://moneymakershorts7-bit.github.io/web_montvelconstructora/#racks): Racks selectivos a medida con cálculo sísmico NEC
+- [Proceso](https://moneymakershorts7-bit.github.io/web_montvelconstructora/#proceso): Consulta → visita → presupuesto escrito → ejecución
+- [Proyectos](https://moneymakershorts7-bit.github.io/web_montvelconstructora/#obras): Galería de obras en Quito
+- [Preguntas frecuentes](https://moneymakershorts7-bit.github.io/web_montvelconstructora/#faq): Zonas, presupuesto y racks
+- [Contacto](https://moneymakershorts7-bit.github.io/web_montvelconstructora/#contacto): WhatsApp, correo y ubicación
 
-## Secciones de la página (SPA / anclas)
+## Recursos del sitio
 
-| Ancla | Contenido |
-|-------|-----------|
-| `#inicio` | Hero: propuesta de valor y CTAs presupuesto / WhatsApp |
-| `#servicios` | Obra nueva, remodelaciones, ampliaciones, reparaciones |
-| `#racks` | Racks selectivos a medida; cálculo sísmico NEC |
-| `#proceso` | Consulta → visita → presupuesto escrito → ejecución |
-| `#obras` | Galería de proyectos (obra, remodelación, racks, bodega) |
-| `#faq` | Zonas de atención, cómo pedir presupuesto, racks |
-| `#contacto` | Tarjetas WhatsApp, correo y ubicación |
+- [Sitio completo](https://moneymakershorts7-bit.github.io/web_montvelconstructora/): Landing principal
+- [AGENTS.md](https://github.com/moneymakershorts7-bit/web_montvelconstructora/blob/main/AGENTS.md): Reglas de producto y checklist para agentes
+- [Repositorio](https://github.com/moneymakershorts7-bit/web_montvelconstructora): Código fuente
 
-## Servicios
+## Optional
 
-1. **Obra nueva** — casas y locales desde excavación hasta entrega de llaves (zona sísmica).
-2. **Remodelaciones** — cocinas, baños, fachadas, reformas con obra limpia.
-3. **Ampliaciones** — metros adicionales o planta alta.
-4. **Reparaciones** — humedades, grietas, cubiertas, instalaciones.
-5. **Racks para bodega** — diseño, fabricación e instalación a medida; normativa NEC.
-
-## Trayectoria (cifras en sitio)
-
-- 15 años de experiencia
-- 120 proyectos terminados
-- 95 clientes atendidos
-
-## Recursos técnicos útiles para agentes
-
-- `AGENTS.md` — reglas de producto, skills y checklist
-- `assets/js/app.js` — datos COMPANY (nombre, ciudad, WhatsApp, email)
-- `assets/js/scene3d.js` — animación Three.js r128 (catedral + racks con scroll)
-- `assets/css/styles.css` — design tokens y layout
-- `assets/images/proyectos/` — imágenes de galería (rutas relativas)
-
-## Preferencias de usuario / negocio
-
-- Contacto preferido: WhatsApp
-- Ciudad fija en copy y SEO: **Quito**
-- Animación 3D de fondo orientada a planos y construcción (no es el mensaje principal de negocio)
-
-## Actualización de este archivo
-
-`llms.txt` debe actualizarse **cada vez** que cambie el contenido público de la página (servicios, contacto, cifras, secciones, URLs o mensajes de negocio). Ver regla en `AGENTS.md`.
+- [Schema.org GeneralContractor (en index)](https://moneymakershorts7-bit.github.io/web_montvelconstructora/): Datos estructurados de la empresa
+- [Lighthouse: auditoría llms.txt](https://developer.chrome.com/docs/lighthouse/agentic-browsing/llms-txt): Criterios de la auditoría Agentic Browsing
